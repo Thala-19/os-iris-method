@@ -1,0 +1,2687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Iris Method — Operating Systems, Ring by Ring</title>
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-2:#F3ECDC;
+    --card:#FFFDF6;
+    --ink:#191712;
+    --ink-soft:#423C31;
+    --muted:#7B7364;
+    --rule:rgba(25,23,18,.15);
+    --rule-soft:rgba(25,23,18,.08);
+    --oxide:#A8411E;
+    --oxide-tint:rgba(168,65,30,.07);
+    --teal:#0F4E58;
+    --teal-tint:rgba(15,78,88,.06);
+    --gold:#8A6512;
+    --gold-tint:rgba(138,101,18,.08);
+    --night:#131109;
+    --night-2:#1C1913;
+    --night-ink:#F1EADA;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:66ch;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:clamp(1rem,.96rem + .2vw,1.09rem);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(1200px 700px at 12% -8%, rgba(255,255,255,.85), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(168,65,30,.05), transparent 65%);
+  }
+  .wrap{width:min(1140px,100% - 2.4rem);margin-inline:auto;position:relative;z-index:1}
+  p{margin:0 0 1em;max-width:var(--measure)}
+  a{color:var(--teal);text-decoration-thickness:1px;text-underline-offset:2px}
+  a:hover{color:var(--oxide)}
+  .skip{position:absolute;left:-999px;top:0;background:var(--ink);color:var(--paper);padding:.6rem 1rem;z-index:99}
+  .skip:focus{left:1rem;top:.6rem}
+  :focus-visible{outline:2px solid var(--oxide);outline-offset:3px;border-radius:2px}
+
+  /* ---------- masthead ---------- */
+  .masthead{padding:clamp(1.4rem,3vw,2.2rem) 0 clamp(1.6rem,4vw,2.6rem)}
+  .topbar{
+    display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:baseline;justify-content:space-between;
+    font-family:var(--mono);font-size:.705rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    border-bottom:1px solid var(--rule);padding-bottom:.75rem;margin-bottom:clamp(1.8rem,4vw,3rem);
+  }
+  .topbar b{color:var(--ink);font-weight:500}
+  h1{
+    font-size:clamp(2.05rem,1.1rem + 3.3vw,3.7rem);
+    line-height:1.04;letter-spacing:-.021em;font-weight:600;
+    margin:0 0 .6rem;max-width:26ch;
+  }
+  .head-grid{display:grid;gap:clamp(1.6rem,4vw,2rem);align-items:end}
+  @media (min-width:1000px){
+    .head-grid{grid-template-columns:minmax(0,1fr) 21rem;gap:clamp(2rem,5vw,4rem)}
+    .head-grid .key{margin-top:0}
+  }
+  h1 em{font-style:italic;color:var(--oxide)}
+  .lede{font-size:clamp(1.06rem,1rem + .5vw,1.28rem);line-height:1.55;color:var(--ink-soft);max-width:52ch;margin-top:1.1rem}
+  .lede strong{font-weight:600;color:var(--ink)}
+  .sources{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.9rem}
+  .chip{
+    font-family:var(--mono);font-size:.685rem;letter-spacing:.05em;
+    border:1px solid var(--rule);background:var(--card);border-radius:999px;
+    padding:.36rem .72rem;color:var(--ink-soft);display:inline-flex;gap:.45rem;align-items:center;
+  }
+  .chip i{width:6px;height:6px;border-radius:50%;background:var(--teal);display:block}
+
+  /* ---------- reading key ---------- */
+  .key{
+    margin-top:clamp(2rem,4vw,2.8rem);border:1px solid var(--rule);border-left:3px solid var(--ink);
+    background:linear-gradient(180deg,rgba(255,253,246,.9),rgba(255,253,246,.5));
+    padding:1.05rem 1.2rem;display:grid;gap:.55rem;
+  }
+  .key h2{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;
+    margin:0 0 .2rem;font-weight:500;color:var(--muted);
+  }
+  .key dl{display:grid;grid-template-columns:auto 1fr;gap:.4rem 1rem;margin:0;align-items:baseline}
+  .key dd{margin:0;font-size:.9rem;color:var(--ink-soft);line-height:1.45}
+  .tag{
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:.14rem .42rem;border-radius:2px;white-space:nowrap;vertical-align:.08em;
+    border:1px solid;display:inline-block;line-height:1.5;font-weight:500;
+  }
+  .tag.src{color:var(--teal);border-color:rgba(15,78,88,.35);background:var(--teal-tint)}
+  .tag.inf{color:var(--oxide);border-color:rgba(168,65,30,.4);background:var(--oxide-tint);border-style:dashed}
+  .tag.ext{color:var(--gold);border-color:rgba(138,101,18,.4);background:var(--gold-tint)}
+
+  /* ---------- nav ---------- */
+  .ringnav{
+    position:sticky;top:0;z-index:40;
+    background:rgba(250,246,236,.93);backdrop-filter:blur(9px);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  }
+  .ringnav .wrap{display:flex;gap:.4rem;overflow-x:auto;padding-block:.55rem;scrollbar-width:none;position:relative}
+  .ringnav .wrap::-webkit-scrollbar{display:none}
+  .ringnav a{
+    font-family:var(--mono);font-size:.665rem;letter-spacing:.09em;text-transform:uppercase;
+    padding:.34rem .62rem;border:1px solid transparent;border-radius:999px;text-decoration:none;
+    color:var(--muted);white-space:nowrap;transition:color .15s,border-color .15s,background .15s;
+  }
+  .ringnav a:hover{color:var(--ink);border-color:var(--rule)}
+  .ringnav a[aria-current="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ---------- map band ---------- */
+  .map{background:var(--night);color:var(--night-ink);margin-block:0;padding-block:clamp(1.9rem,4vw,3rem);position:relative;overflow:hidden}
+  .map::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(600px 420px at 34% 45%, rgba(190,120,60,.13), transparent 70%);
+  }
+  .map .wrap{position:relative;z-index:1}
+  .map-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.6rem 1.5rem;align-items:baseline;margin-bottom:1.1rem}
+  .map-head h2{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+    margin:0;font-weight:500;color:rgba(241,234,218,.62);
+  }
+  .map-head p{margin:0;font-size:.85rem;color:rgba(241,234,218,.55);max-width:44ch}
+  .map-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(1rem,3vw,2.6rem);align-items:center}
+  .map-figure{margin:0}
+  .map-figure svg{width:100%;height:auto;display:block;max-width:560px;margin-inline:auto}
+  .map figcaption{
+    font-family:var(--mono);font-size:.64rem;letter-spacing:.04em;color:rgba(241,234,218,.4);
+    text-align:center;margin:.5rem 0 0;line-height:1.65;max-width:52ch;margin-inline:auto;
+  }
+  @keyframes settle{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+  .map-figure svg{animation:settle .8s ease-out both}
+  @media (prefers-reduced-motion:reduce){.map-figure svg{animation:none}}
+
+  .band{transition:opacity .22s ease}
+  .band circle.hit{
+    stroke:rgba(241,234,218,.26);stroke-width:1;vector-effect:non-scaling-stroke;
+    transition:stroke .2s,fill .2s;
+  }
+  #bands .band circle.hit{fill:rgba(241,234,218,.03)}
+  #bands .band:nth-of-type(even) circle.hit{fill:rgba(241,234,218,.07)}
+  #bands .band[data-ring="0"] circle.hit{fill:#1E1B13}
+  .map.has-sel .band:not(.sel){opacity:.38}
+  .band:hover circle.hit,.band:focus-visible circle.hit,.band.sel circle.hit{stroke:rgba(241,234,218,.9)}
+  #bands .band[data-ring="0"]:hover circle.hit,#bands .band[data-ring="0"].sel circle.hit{fill:#2C2618}
+  #bands .band.tgt circle.hit{
+    stroke:rgba(216,124,64,.92);stroke-width:2.6;
+    fill:rgba(216,124,64,.10);
+  }
+  #bands .band.tgt:hover circle.hit,#bands .band.tgt.sel circle.hit{stroke:#F2AE7C;fill:rgba(216,124,64,.21)}
+  #bands .band.tgt.sel circle.hit{stroke-width:3.6}
+  .corelabel{font-family:var(--mono);fill:rgba(241,234,218,.92);text-anchor:middle;letter-spacing:.12em}
+  .callout{font-family:var(--mono);letter-spacing:.1em;fill:rgba(241,234,218,.55)}
+  .lead{stroke:rgba(216,124,64,.55);stroke-width:1;stroke-dasharray:3 3;fill:none}
+
+  .legend{list-style:none;margin:0;padding:0;border-top:1px solid rgba(241,234,218,.14)}
+  .legend button{
+    all:unset;display:grid;grid-template-columns:1.3rem 1fr;gap:.1rem .55rem;
+    width:100%;padding:.32rem .2rem;border-bottom:1px solid rgba(241,234,218,.09);
+    cursor:pointer;transition:background .15s;
+  }
+  .legend button:hover,.legend button:focus-visible{background:rgba(241,234,218,.06)}
+  .legend button:focus-visible{outline:1px dashed rgba(241,234,218,.5);outline-offset:-2px}
+  .legend .ln{font-family:var(--mono);font-size:.66rem;color:rgba(241,234,218,.45);padding-top:.1rem}
+  .legend .lname{font-size:.815rem;letter-spacing:.005em;color:var(--night-ink)}
+  .legend .lfix{grid-column:2;font-family:var(--mono);font-size:.6rem;line-height:1.45;color:rgba(241,234,218,.42);letter-spacing:.01em}
+  .legend li.on .lname{color:#FFD9A8}
+  .legend li.on .ln{color:#E9A06A}
+
+  /* ---------- sections ---------- */
+  main{padding-bottom:clamp(3rem,7vw,5rem)}
+  .ring{
+    padding-block:clamp(2.1rem,4.5vw,3.4rem);
+    border-top:1px solid var(--rule);
+    display:grid;grid-template-columns:76px minmax(0,1fr);gap:clamp(.6rem,2.5vw,2.2rem);
+    scroll-margin-top:4.2rem;
+  }
+  .ring:first-of-type{border-top:0}
+  .rail{padding-top:.35rem;border-right:1px solid var(--rule-soft);text-align:center}
+  .rail .n{font-family:var(--mono);font-size:1.02rem;letter-spacing:.06em;display:block;color:var(--muted)}
+  .ring.tgt .rail .n{color:var(--oxide)}
+  .rail .lbl{
+    font-family:var(--mono);font-size:.565rem;letter-spacing:.14em;text-transform:uppercase;
+    writing-mode:vertical-rl;color:var(--muted);margin-top:.7rem;display:inline-block;height:6.5rem;overflow:hidden;
+  }
+  .ring h2{
+    font-size:clamp(1.45rem,1.1rem + 1.3vw,2.15rem);line-height:1.12;letter-spacing:-.012em;
+    margin:0 0 .3rem;font-weight:600;text-wrap:balance;
+  }
+  .ring .kicker{
+    font-family:var(--mono);font-size:.665rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 .75rem;
+  }
+  .ring.tgt .kicker{color:var(--oxide)}
+  .ring p{margin-bottom:1.05em}
+  .ring p.intro{font-size:1.03em;color:var(--ink-soft)}
+  .sec-body{min-width:0}
+
+  /* triad */
+  .triad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--rule);margin:1.6rem 0 1.5rem;background:var(--card)}
+  .triad > div{padding:.95rem 1rem 1.05rem;border-left:1px solid var(--rule)}
+  .triad > div:first-child{border-left:0}
+  .triad h3{
+    font-family:var(--mono);font-size:.625rem;letter-spacing:.16em;text-transform:uppercase;
+    margin:0 0 .5rem;font-weight:600;display:flex;align-items:center;gap:.45rem;color:var(--ink-soft);
+  }
+  .triad h3::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px solid currentColor;display:block;flex:none}
+  .triad .t-concept h3{color:var(--teal)}
+  .triad .t-bottle{color:var(--ink-soft);background:var(--oxide-tint)}
+  .triad .t-bottle h3{color:var(--oxide)}
+  .triad .t-break h3{color:var(--gold)}
+  .triad p{margin:0;font-size:.925rem;line-height:1.56;max-width:none}
+  .triad .tag{margin-top:.55rem;font-size:.55rem;padding:.1rem .3rem}
+  .triad .t-bottle h3::before{border-radius:1px;transform:rotate(45deg)}
+
+  /* figures */
+  figure.fig{margin:1.7rem 0 1.9rem;border:1px solid var(--rule);background:var(--card);padding:1.05rem 1.1rem .8rem;position:relative}
+  figure.fig::before{
+    content:attr(data-fig);position:absolute;top:-1px;right:-1px;
+    font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;color:var(--muted);
+    background:var(--paper-2);border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:.18rem .45rem;
+  }
+  figure.fig svg{width:100%;height:auto;display:block}
+  figcaption{
+    font-family:var(--mono);font-size:.685rem;line-height:1.6;color:var(--muted);
+    margin-top:.7rem;padding-top:.6rem;border-top:1px dashed var(--rule);letter-spacing:.015em;
+  }
+  figcaption b{color:var(--ink-soft);font-weight:500}
+
+  /* svg text defaults */
+  .s-lbl{font-family:var(--mono);font-size:11px;fill:var(--ink-soft);letter-spacing:.03em}
+  .s-lbl-s{font-family:var(--mono);font-size:9.5px;fill:var(--muted);letter-spacing:.08em}
+  .s-box{fill:#fff;stroke:rgba(25,23,18,.35);stroke-width:1.2}
+  .s-arrow{stroke:rgba(25,23,18,.5);stroke-width:1.3;fill:none}
+  .s-dash{stroke:rgba(25,23,18,.4);stroke-width:1.2;fill:none;stroke-dasharray:4 4}
+  .s-idle{fill:rgba(168,65,30,.11)}
+  .s-busy{fill:rgba(15,78,88,.72)}
+
+  /* note / callout */
+  .note{
+    border-left:2px solid var(--gold);background:var(--gold-tint);
+    padding:.8rem 1rem;margin:1.3rem 0;font-size:.93rem;
+  }
+  .note p:last-child{margin-bottom:0}
+  .note .nh{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--gold);display:block;margin-bottom:.3rem;
+  }
+  .pull{
+    margin:1.6rem 0;padding:.2rem 0 .2rem 1.1rem;border-left:3px solid var(--ink);
+    font-size:1.12em;line-height:1.5;font-style:italic;color:var(--ink-soft);max-width:48ch;
+  }
+  .pull span{font-style:normal;font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;display:block;margin-top:.5rem;color:var(--muted)}
+
+  /* utilization chart */
+  .util{margin:0;display:grid;gap:.15rem}
+  .util-row{display:grid;grid-template-columns:11.5rem minmax(0,1fr) 5.4rem;gap:.7rem;align-items:center;padding:.55rem 0}
+  .util-row + .util-row{border-top:1px dashed var(--rule)}
+  .util-name{font-size:.82rem;line-height:1.35;color:var(--ink-soft)}
+  .util-name span{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.1rem}
+  .bar{display:flex;height:34px;border:1px solid var(--rule);background:#fff;overflow:hidden}
+  .bar i{display:block;height:100%;position:relative}
+  .bar i.b{background:rgba(15,78,88,.75)}
+  .bar i.i{background:repeating-linear-gradient(135deg,rgba(168,65,30,.18) 0 4px,rgba(168,65,30,.06) 4px 8px)}
+  .bar i.i.wide::after{
+    content:"idle";position:absolute;inset:0;display:grid;place-items:center;
+    font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(168,65,30,.8);white-space:nowrap;
+  }
+  .util-val{font-family:var(--mono);font-size:.72rem;text-align:right;color:var(--ink-soft)}
+  .util-val b{display:block;font-size:.95rem;color:var(--ink);font-weight:500}
+  .util-val em{font-style:normal;color:var(--muted);font-size:.6rem;letter-spacing:.08em}
+  .util-legend{display:flex;gap:1.1rem;font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:.5rem;letter-spacing:.05em}
+  .util-legend span{display:flex;align-items:center;gap:.4rem}
+  .util-legend i{width:16px;height:9px;display:block;border:1px solid var(--rule)}
+  @media (max-width:720px){
+    .util-row{grid-template-columns:1fr;gap:.4rem}
+    .util-val{text-align:left}
+    .util-val b{display:inline;margin-right:.4rem}
+  }
+
+  /* PCB */
+  .pcb-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:0}
+  .pcb-col{border:1px solid var(--rule);background:#fff;padding:.7rem .8rem}
+  .pcb-col h4{
+    font-family:var(--mono);font-size:.605rem;letter-spacing:.13em;text-transform:uppercase;
+    margin:0 0 .45rem;color:var(--teal);font-weight:600;
+  }
+  .pcb-col ul{margin:0;padding-left:.95rem;font-size:.8rem;line-height:1.5;color:var(--ink-soft);font-family:var(--mono)}
+  .pcb-col li{margin-bottom:.18rem}
+  .pcb-col li::marker{color:var(--rule)}
+
+  /* switch demo */
+  .demo{margin-top:1rem;border:1px solid var(--rule);background:#fff}
+  .demo-cpu{
+    display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline;justify-content:space-between;
+    padding:.6rem .8rem;border-bottom:1px solid var(--rule);background:var(--paper-2);
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.03em;
+  }
+  .demo-cpu .lbl{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+  .demo-cpu code{font-family:var(--mono);font-size:.78rem;color:var(--ink);background:rgba(25,23,18,.05);padding:.12rem .4rem}
+  .demo-body{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule)}
+  .proc{background:#fff;padding:.7rem .8rem;transition:background .2s}
+  .proc.run{background:rgba(15,78,88,.07)}
+  .proc h5{margin:0 0 .3rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:.4rem}
+  .proc h5 em{font-style:normal;font-size:.55rem;letter-spacing:.12em;color:var(--muted)}
+  .proc.run h5 em{color:var(--teal)}
+  .proc code{display:block;font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);line-height:1.75}
+  .proc .saved{margin-top:.3rem;padding-top:.3rem;border-top:1px dashed var(--rule);color:var(--muted)}
+  .demo-foot{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-top:1px solid var(--rule);background:var(--paper-2)}
+  .demo-foot p{margin:0;font-size:.78rem;color:var(--muted);max-width:38ch;font-family:var(--sans)}
+  .btn{
+    all:unset;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--ink);padding:.4rem .8rem;cursor:pointer;background:var(--ink);color:var(--paper);
+    transition:opacity .15s;
+  }
+  .btn:hover{opacity:.82}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+  .btn.ghost:hover{border-color:var(--ink);opacity:1}
+  .flash{animation:flash .5s ease-out}
+  @keyframes flash{0%{background:rgba(201,150,43,.45)}100%{background:transparent}}
+  @media (prefers-reduced-motion:reduce){.flash{animation:none}}
+
+  /* state machine */
+  .fsm{display:grid;grid-template-columns:minmax(0,1fr) 15.5rem;gap:1rem;align-items:start}
+  .fsm svg{width:100%;height:auto}
+  .node{cursor:pointer}
+  .node rect{fill:#fff;stroke:rgba(25,23,18,.4);stroke-width:1.3;transition:fill .18s,stroke .18s}
+  .node:hover rect{stroke:var(--ink)}
+  .node.sel rect{fill:rgba(168,65,30,.1);stroke:var(--oxide);stroke-width:2.4}
+  .node text{font-family:var(--mono);font-size:11.5px;fill:var(--ink);letter-spacing:.04em;text-anchor:middle;pointer-events:none}
+  .edge{stroke:rgba(25,23,18,.42);stroke-width:1.2;fill:none;transition:stroke .18s,stroke-width .18s}
+  .edge.lit{stroke:var(--oxide);stroke-width:2.2}
+  .elbl{font-family:var(--mono);font-size:9px;fill:var(--muted);letter-spacing:.02em}
+  .elbl.lit{fill:var(--oxide)}
+  .zone{fill:rgba(25,23,18,.035);stroke:rgba(25,23,18,.18);stroke-dasharray:5 5}
+  .zonelbl{font-family:var(--mono);font-size:8.5px;fill:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+  .fsm-panel{border:1px solid var(--rule);background:#fff;padding:.8rem .9rem;min-height:11rem}
+  .fsm-panel h4{margin:0 0 .15rem;font-size:1rem;letter-spacing:-.01em}
+  .fsm-panel .st{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    display:block;margin-bottom:.55rem;
+  }
+  .fsm-panel ul{list-style:none;margin:0;padding:0;font-size:.82rem}
+  .fsm-panel li{padding:.34rem 0;border-top:1px solid var(--rule-soft);line-height:1.4}
+  .fsm-panel li b{font-family:var(--mono);font-size:.76rem;font-weight:500;color:var(--ink)}
+  .fsm-panel li span{display:block;font-family:var(--mono);font-size:.63rem;color:var(--muted);margin-top:.1rem}
+  .strip{margin-top:1.1rem;border-top:1px dashed var(--rule);padding-top:.85rem}
+  .strip-title{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 .6rem;
+  }
+  .strip svg{width:100%;height:auto;display:block}
+  @media (max-width:820px){.fsm{grid-template-columns:1fr}}
+
+  /* code */
+  pre{
+    margin:0;background:#14130E;color:#EDE6D6;padding:1rem 1.1rem;overflow-x:auto;
+    font-family:var(--mono);font-size:.775rem;line-height:1.75;border:1px solid #14130E;
+  }
+  pre b{color:#F0B27A;font-weight:500}
+  pre i{color:#8FB9AE;font-style:normal}
+  pre u{color:#7E7767;text-decoration:none}
+  .code-wrap{border:1px solid var(--rule);background:var(--card)}
+  .code-wrap .ch{
+    display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);padding:.42rem .8rem;border-bottom:1px solid var(--rule);
+  }
+
+  /* row list */
+  .next-grid{display:block;border-top:1px solid var(--rule);margin-top:1.5rem}
+  .next{
+    display:grid;grid-template-columns:11.5rem 12.5rem minmax(0,1fr);gap:.4rem 1.4rem;
+    padding:.85rem .3rem;border-bottom:1px solid var(--rule);align-items:baseline;
+    transition:background .15s;
+  }
+  .next:hover{background:rgba(168,65,30,.035)}
+  .next h4{margin:0;font-size:1.02rem;letter-spacing:-.005em;font-weight:600}
+  .next .q{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--oxide);display:block}
+  .next p{margin:0;font-size:.87rem;line-height:1.55;color:var(--ink-soft);max-width:56ch}
+  @media (max-width:820px){
+    .next{grid-template-columns:1fr;gap:.2rem;padding:.8rem .2rem}
+    .next p{margin-top:.25rem}
+  }
+
+  /* practice */
+  .drill{border-top:1px solid var(--rule);margin-top:2rem}
+  details{border-bottom:1px solid var(--rule)}
+  summary{
+    cursor:pointer;padding:.85rem .2rem;font-size:.98rem;line-height:1.45;
+    display:flex;gap:.75rem;align-items:baseline;list-style:none;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{
+    content:"?";font-family:var(--mono);font-size:.7rem;color:var(--oxide);flex:none;
+    border:1px solid rgba(168,65,30,.35);border-radius:50%;width:1.25rem;height:1.25rem;
+    display:grid;place-items:center;margin-top:.1rem;
+  }
+  details[open] summary::before{content:"→";border-radius:2px}
+  summary:hover{color:var(--oxide)}
+  details .ans{padding:0 0 .95rem 2rem;font-size:.92rem;color:var(--ink-soft)}
+  details .ans p{margin-bottom:.6em}
+  details .ans p:last-child{margin-bottom:0}
+
+  footer{
+    border-top:1px solid var(--rule);margin-top:clamp(2rem,5vw,3.5rem);
+    padding-top:1.2rem;font-family:var(--mono);font-size:.68rem;line-height:1.9;color:var(--muted);
+  }
+  footer b{color:var(--ink-soft);font-weight:500;letter-spacing:.06em}
+  footer p{max-width:80ch;margin:0 0 .5em}
+
+  @media (max-width:860px){
+    .map-grid{grid-template-columns:1fr}
+    .map-figure svg{max-width:460px}
+    .triad{grid-template-columns:1fr}
+    .triad > div{border-left:0;border-top:1px solid var(--rule)}
+    .triad > div:first-child{border-top:0}
+    .pcb-grid{grid-template-columns:1fr}
+    .ring{grid-template-columns:1fr}
+    .rail{border-right:0;text-align:left;display:flex;gap:.6rem;align-items:baseline;padding-top:0}
+    .rail .lbl{writing-mode:horizontal-tb;height:auto;margin:0}
+    .demo-body{grid-template-columns:1fr}
+  }
+  /* ---------- tables ---------- */
+  .tablewrap{overflow-x:auto;margin:1.4rem 0}
+  .tbl{width:100%;border-collapse:collapse;font-size:.86rem;min-width:33rem}
+  .tbl th{
+    font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--rule);
+    background:var(--paper-2);font-weight:500;white-space:nowrap;
+  }
+  .tbl td{padding:.52rem .6rem;border-bottom:1px solid var(--rule-soft);vertical-align:top;line-height:1.45}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl td:first-child{color:var(--ink);font-weight:600}
+  .tbl code{font-family:var(--mono);font-size:.78em;background:rgba(25,23,18,.05);padding:.05rem .25rem}
+
+  /* ---------- gantt ---------- */
+  .gantt{display:grid;gap:1.05rem;margin:0}
+  .gantt-row{display:grid;grid-template-columns:8.4rem minmax(0,1fr) 5rem;gap:.8rem;align-items:center}
+  .gantt-name{font-size:.84rem;color:var(--ink-soft);line-height:1.3}
+  .gantt-name span{
+    display:block;font-family:var(--mono);font-size:.57rem;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--muted);margin-top:.15rem;
+  }
+  .gantt-bar{display:flex;height:40px;border:1px solid var(--rule);background:#fff;overflow:hidden}
+  .gantt-bar i{
+    display:grid;place-items:center;font-family:var(--mono);font-size:.59rem;color:#fff;
+    letter-spacing:.03em;border-right:1px solid rgba(255,255,255,.45);
+    min-width:0;overflow:hidden;white-space:nowrap;font-style:normal;
+  }
+  .gantt-bar i:last-child{border-right:0}
+  .gantt-bar .g1{background:#1B5C66}
+  .gantt-bar .g2{background:#A8411E}
+  .gantt-bar .g3{background:#8A6512}
+  .gantt-val{font-family:var(--mono);font-size:.66rem;text-align:right;color:var(--muted);line-height:1.3}
+  .gantt-val b{display:block;font-size:1.02rem;color:var(--ink);font-weight:500}
+  .gantt-axis{
+    display:flex;justify-content:space-between;font-family:var(--mono);font-size:.56rem;
+    color:var(--muted);letter-spacing:.08em;margin:0 6.2rem 0 9.4rem;
+  }
+  @media (max-width:760px){
+    .gantt-row{grid-template-columns:1fr;gap:.35rem}
+    .gantt-val{text-align:left}
+    .gantt-val b{display:inline;margin-right:.4rem}
+    .gantt-axis{display:none}
+  }
+
+  /* ---------- numbered requirements ---------- */
+  .sub{
+    font-family:var(--sans);font-size:1.02rem;font-weight:600;letter-spacing:-.005em;
+    margin:1.75rem 0 .45rem;padding-top:.95rem;border-top:1px solid var(--rule-soft);
+  }
+  .reqs{counter-reset:r;list-style:none;margin:1.3rem 0;padding:0;display:grid;gap:.55rem}
+  .reqs li{
+    counter-increment:r;display:grid;grid-template-columns:1.4rem minmax(0,1fr);gap:.65rem;
+    font-size:.9rem;color:var(--ink-soft);line-height:1.5;max-width:62ch;
+  }
+  .reqs li::before{
+    content:counter(r);font-family:var(--mono);font-size:.64rem;color:var(--oxide);
+    border:1px solid rgba(168,65,30,.35);border-radius:50%;width:1.3rem;height:1.3rem;
+    display:grid;place-items:center;margin-top:.15rem;flex:none;
+  }
+
+  /* ---------- hardware spectrum ---------- */
+  .spectrum{margin:1.6rem 0;border:1px solid var(--rule);background:var(--card)}
+  .spectrum-axis{height:6px;background:linear-gradient(90deg,rgba(15,78,88,.8),rgba(168,65,30,.45))}
+  .spectrum-labels{
+    display:flex;justify-content:space-between;font-family:var(--mono);font-size:.56rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.45rem .85rem .1rem;
+  }
+  .spectrum-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stop{padding:.7rem .85rem 1rem;border-right:1px solid var(--rule)}
+  .stop:last-child{border-right:0}
+  .stop .k{
+    font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--oxide);display:block;margin-bottom:.3rem;
+  }
+  .stop h4{margin:0 0 .2rem;font-size:.94rem;font-weight:600;letter-spacing:-.005em}
+  .stop p{margin:0;font-size:.78rem;line-height:1.48;color:var(--ink-soft);max-width:none}
+  @media (max-width:780px){
+    .spectrum-track{grid-template-columns:1fr 1fr}
+    .stop{border-bottom:1px solid var(--rule)}
+    .stop:nth-child(2){border-right:0}
+  }
+
+  /* wide diagrams: keep text legible on narrow screens by scrolling, not shrinking */
+  @media (max-width:660px){
+    figure.fig, .map-figure{scrollbar-width:none}
+    figure.fig::-webkit-scrollbar, .map-figure::-webkit-scrollbar{display:none}
+    figure.fig{overflow-x:auto;overscroll-behavior-x:contain}
+    figure.fig > svg{min-width:560px}
+    .fsm{grid-template-columns:minmax(560px,1fr)}
+    .fsm > svg{min-width:560px}
+    .strip{min-width:560px}
+    .strip svg{min-width:560px}
+    figure.fig figcaption{position:sticky;left:0;width:calc(100vw - 6rem)}
+    .strip-title{position:sticky;left:0}
+    .map-figure{overflow-x:auto;overscroll-behavior-x:contain}
+    .map-figure svg{min-width:500px}
+    .map figcaption{width:calc(100vw - 6rem);margin-inline:0;text-align:left}
+    .pcb-grid{grid-template-columns:1fr}
+    .key dl{grid-template-columns:1fr;gap:.15rem}
+    .key dd{margin-bottom:.5rem}
+  }
+
+  @media print{
+    .ringnav,.map{display:none}
+    body{background:#fff}
+    .ring{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#ring0">Skip to the rings</a>
+
+<header class="masthead wrap">
+  <div class="topbar">
+    <span><b>COMP6697001</b> &nbsp;Operating Systems</span>
+    <span>Sessions 1–7 &nbsp;·&nbsp; Iris Method reconstruction</span>
+  </div>
+
+  <div class="head-grid">
+    <div>
+      <h1>Seven decks. One argument.<br><em>Ten missing rings.</em></h1>
+
+      <p class="lede">
+        Session 1 ends with a machine that runs <strong>one job at a time</strong>. Session 7 ends with
+        <strong>many cores, thousands of threads</strong>, and a set of processes that are permanently stuck.
+        In between, nothing is a separate topic: each deck is a ring, and each ring exists because the one
+        inside it could not do something.
+      </p>
+
+      <div class="sources">
+        <span class="chip"><i></i>Introduction · Processes — 82 slides</span>
+        <span class="chip"><i></i>Threads · Multiprocessors — 66 slides</span>
+        <span class="chip"><i></i>Scheduling · Sync/IPC · Deadlock — 124 slides</span>
+        <span class="chip"><i></i>Tanenbaum ch.1–8 · Stallings ch.1–13</span>
+      </div>
+    </div>
+
+    <div class="key">
+      <h2>How to read the tags</h2>
+      <dl>
+        <dt><span class="tag src">source</span></dt>
+        <dd>Stated in the slides or the textbook chapters they cite. Slide numbers given.</dd>
+        <dt><span class="tag inf">inferred</span></dt>
+        <dd>Not written down, but the only conclusion the material supports. My deduction, marked.</dd>
+        <dt><span class="tag ext">external</span></dt>
+        <dd>Closes a gap the decks leave open — they cite figures as images. Outside knowledge, labelled.</dd>
+      </dl>
+    </div>
+  </div>
+</header>
+
+<nav class="ringnav" aria-label="Rings">
+  <div class="wrap">
+    <a href="#ring0" data-nav="0">R0 · Core</a>
+    <a href="#ring1" data-nav="1">R1 · Interrupts</a>
+    <a href="#ring2" data-nav="2">R2 · Multiprogramming</a>
+    <a href="#ring3" data-nav="3">R3 · The process</a>
+    <a href="#ring4" data-nav="4">R4 · Lifecycle</a>
+    <a href="#ring5" data-nav="5">R5 · Syscalls</a>
+    <a href="#ring6" data-nav="6">R6 · Threads</a>
+    <a href="#ring7" data-nav="7">R7 · Scheduling</a>
+    <a href="#ring8" data-nav="8">R8 · Sync</a>
+    <a href="#ring9" data-nav="9">R9 · Deadlock</a>
+    <a href="#ring10" data-nav="10">R10 · Multicore</a>
+    <a href="#beyond" data-nav="11">Beyond</a>
+  </div>
+</nav>
+
+<section class="map" aria-labelledby="map-title">
+  <div class="wrap">
+    <div class="map-head">
+      <h2 id="map-title">Plate I — the iris, cut open</h2>
+      <p>Radial distance is time. Eleven bands, one argument: each was invented to remove a limit of the band inside it.</p>
+    </div>
+
+    <div class="map-grid">
+      <figure class="map-figure">
+        <svg viewBox="0 0 900 900" role="img" aria-labelledby="mapdesc" id="iris">
+          <desc id="mapdesc">Eleven concentric rings. Ring 0, the instruction cycle, sits at the centre. Moving outward: interrupts and the batch monitor, multiprogramming, the process (the hinge ring, highlighted in orange), lifecycle and states, system calls, threads, scheduling, synchronisation, deadlock, and multiprocessor systems. A dashed ring beyond holds distributed systems.</desc>
+
+          <g id="bands">
+            <a href="#beyond" class="band outer" data-ring="11" aria-label="Beyond: distributed systems and middleware">
+              <circle class="hit" cx="450" cy="450" r="406" fill="none" stroke-dasharray="2 7"/>
+            </a>
+            <a href="#ring10" class="band" data-ring="10" aria-label="Ring 10: multiprocessor systems">
+              <circle class="hit" cx="450" cy="450" r="380"/>
+            </a>
+            <a href="#ring9" class="band" data-ring="9" aria-label="Ring 9: deadlock">
+              <circle class="hit" cx="450" cy="450" r="360"/>
+            </a>
+            <a href="#ring8" class="band" data-ring="8" aria-label="Ring 8: synchronisation and IPC">
+              <circle class="hit" cx="450" cy="450" r="338"/>
+            </a>
+            <a href="#ring7" class="band" data-ring="7" aria-label="Ring 7: process scheduling">
+              <circle class="hit" cx="450" cy="450" r="314"/>
+            </a>
+            <a href="#ring6" class="band" data-ring="6" aria-label="Ring 6: threads">
+              <circle class="hit" cx="450" cy="450" r="288"/>
+            </a>
+            <a href="#ring5" class="band" data-ring="5" aria-label="Ring 5: system calls">
+              <circle class="hit" cx="450" cy="450" r="260"/>
+            </a>
+            <a href="#ring4" class="band" data-ring="4" aria-label="Ring 4: lifecycle and process states">
+              <circle class="hit" cx="450" cy="450" r="230"/>
+            </a>
+            <a href="#ring3" class="band tgt" data-ring="3" aria-label="The hinge ring: the process">
+              <circle class="hit" cx="450" cy="450" r="196"/>
+            </a>
+            <a href="#ring2" class="band" data-ring="2" aria-label="Ring 2: multiprogramming">
+              <circle class="hit" cx="450" cy="450" r="130"/>
+            </a>
+            <a href="#ring1" class="band" data-ring="1" aria-label="Ring 1: interrupts and the batch monitor">
+              <circle class="hit" cx="450" cy="450" r="92"/>
+            </a>
+            <a href="#ring0" class="band core" data-ring="0" aria-label="Ring 0: the instruction cycle">
+              <circle class="hit" cx="450" cy="450" r="52"/>
+            </a>
+          </g>
+
+          <text class="corelabel" x="450" y="457" font-size="16">RING 0</text>
+
+          <g aria-hidden="true">
+            <path class="lead" d="M172,124 L332,330"/>
+            <circle cx="335" cy="334" r="3.4" fill="#D87C40"/>
+            <text class="callout" x="22" y="86" font-size="9" fill="rgba(216,124,64,.9)">THE HINGE</text>
+            <text class="callout" x="22" y="114" font-size="17" fill="#F1EADA">3 · THE PROCESS</text>
+            <text class="callout" x="22" y="134" font-size="9" fill="rgba(241,234,218,.42)">everything after builds here</text>
+          </g>
+        </svg>
+        <figcaption>Read outward from the centre. Eleven bands, numbered in the legend; hover either side to pair them.</figcaption>
+      </figure>
+
+      <div>
+        <ul class="legend" id="legend">
+          <li data-ring="0"><button type="button"><span class="ln">0</span><span class="lname">Instruction cycle</span><span class="lfix">the machine that obeys, and cannot be taken back</span></button></li>
+          <li data-ring="1"><button type="button"><span class="ln">1</span><span class="lname">Interrupts + monitor</span><span class="lfix">fixed: a program could never be stopped</span></button></li>
+          <li data-ring="2"><button type="button"><span class="ln">2</span><span class="lname">Multiprogramming</span><span class="lfix">fixed: CPU idle during every I/O wait</span></button></li>
+          <li data-ring="3"><button type="button"><span class="ln">3</span><span class="lname">The process</span><span class="lfix">fixed: nothing was <em>resumable</em> or accountable</span></button></li>
+          <li data-ring="4"><button type="button"><span class="ln">4</span><span class="lname">Lifecycle &amp; states</span><span class="lfix">fixed: “not running” hid two different problems</span></button></li>
+          <li data-ring="5"><button type="button"><span class="ln">5</span><span class="lname">System calls</span><span class="lfix">fixed: user code could not ask for any of it</span></button></li>
+          <li data-ring="6"><button type="button"><span class="ln">6</span><span class="lname">Threads</span><span class="lfix">fixed: a whole address space per unit of work</span></button></li>
+          <li data-ring="7"><button type="button"><span class="ln">7</span><span class="lname">Scheduling</span><span class="lfix">fixed: a ready queue with no policy</span></button></li>
+          <li data-ring="8"><button type="button"><span class="ln">8</span><span class="lname">Synchronisation</span><span class="lfix">fixed: concurrent reads and writes race</span></button></li>
+          <li data-ring="9"><button type="button"><span class="ln">9</span><span class="lname">Deadlock</span><span class="lfix">fixed: blocking that can never end</span></button></li>
+          <li data-ring="10"><button type="button"><span class="ln">10</span><span class="lname">Multicore</span><span class="lfix">fixed: “one program at a time” was assumed</span></button></li>
+          <li data-ring="11"><button type="button"><span class="ln">11</span><span class="lname">Beyond</span><span class="lfix">distributed systems, middleware, the open question</span></button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <!-- ================= RING 0 ================= -->
+  <section class="ring" id="ring0">
+    <div class="rail"><span class="n">00</span><span class="lbl">The core</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 0 · the oldest thing in the story</p>
+      <h2>A machine that executes, and nothing else</h2>
+      <p class="intro">
+        Before there is an operating system there is a loop. Fetch an instruction from memory, decode it,
+        execute it, increment the program counter, repeat. Everything in both decks is a consequence of how
+        little this loop can do.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            The stored-program CPU: a program counter, a handful of registers, an ALU, and memory reachable
+            over a bus. Its whole repertoire is the instruction cycle.
+          </p>
+          <span class="tag src">source · deck 1 s.8–9</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            The loop has no exit that the <em>program</em> does not choose. It will follow the next
+            instruction forever — through an infinite loop, through a crash. And time spent waiting on a
+            slow device is time the CPU spends doing nothing at all.
+          </p>
+          <span class="tag inf">inferred from s.8–12</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            None, at this ring. That is the point of the core: it has no mechanism for being interrupted,
+            because it has no concept of anyone else. The escape hatch has to be built in hardware.
+          </p>
+          <span class="tag inf">inferred</span>
+        </div>
+      </div>
+
+      <p>
+        The slides spend real time here for a reason: pipelining and superscalar execution
+        <span class="tag src">s.13</span> make the loop <em>faster</em>, but faster is not the same as
+        <em>structurally different</em>. A faster loop is still one loop that cannot be shared. Utilization
+        and sharing are the two problems the nine rings after this one exist to solve.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 1">
+        <svg viewBox="0 0 720 210" role="img" aria-label="Instruction cycle: fetch, decode, execute, then check for interrupts; it loops. Waiting on a device stalls the loop.">
+          <rect class="s-box" x="34" y="40" width="112" height="48" rx="2"/>
+          <text class="s-lbl" x="90" y="60" text-anchor="middle">FETCH</text>
+          <text class="s-lbl-s" x="90" y="76" text-anchor="middle">instruction</text>
+
+          <rect class="s-box" x="196" y="40" width="112" height="48" rx="2"/>
+          <text class="s-lbl" x="252" y="60" text-anchor="middle">DECODE</text>
+          <text class="s-lbl-s" x="252" y="76" text-anchor="middle">what is it?</text>
+
+          <rect class="s-box" x="358" y="40" width="112" height="48" rx="2"/>
+          <text class="s-lbl" x="414" y="60" text-anchor="middle">EXECUTE</text>
+          <text class="s-lbl-s" x="414" y="76" text-anchor="middle">registers / memory</text>
+
+          <rect x="520" y="34" width="122" height="60" rx="2" fill="rgba(168,65,30,.06)" stroke="rgba(168,65,30,.5)" stroke-width="1.2" stroke-dasharray="5 4"/>
+          <text class="s-lbl" x="581" y="56" text-anchor="middle" style="fill:#A8411E">INTERRUPT?</text>
+          <text class="s-lbl-s" x="581" y="72" text-anchor="middle">the only exit</text>
+
+          <path class="s-arrow" d="M146,64 H196" marker-end="url(#a0)"/>
+          <path class="s-arrow" d="M308,64 H358" marker-end="url(#a0)"/>
+          <path class="s-arrow" d="M470,64 H520" marker-end="url(#a0)"/>
+          <path class="s-arrow" d="M581,94 V126 H90 V88" marker-end="url(#a0)" stroke-dasharray="4 4"/>
+          <text class="s-lbl-s" x="336" y="146" text-anchor="middle">no interrupt → next instruction</text>
+
+          <rect x="34" y="170" width="608" height="18" fill="rgba(168,65,30,.08)"/>
+          <text class="s-lbl-s" x="338" y="183" text-anchor="middle" style="letter-spacing:.14em">I/O WAIT — LOOP STALLED, CPU WORTH NOTHING</text>
+          <defs><marker id="a0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.5)"/></marker></defs>
+        </svg>
+        <figcaption><b>A closed loop.</b> Nothing inside the cycle can take the machine away from the program currently in it. The dashed box is the seam where the next ring gets bolted on.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= RING 1 ================= -->
+  <section class="ring" id="ring1">
+    <div class="rail"><span class="n">01</span><span class="lbl">Interrupt</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 1 · the machine learns to be interrupted</p>
+      <h2>An interrupt, and something to return to</h2>
+      <p class="intro">
+        If a program cannot be stopped from the outside, the machine can never be shared. The interrupt is
+        the hardware answer: an event from hardware or software that grabs the CPU, remembers where it was,
+        and jumps to a handler.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            A signal on the bus that transfers control to an interrupt-handling routine, indexed through a
+            table of interrupt vectors. Four kinds: program, timer, I/O, hardware failure.
+          </p>
+          <span class="tag src">source · deck 1 s.10–11</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            An interrupt gets you <em>out</em> of a program, but out into what? On an early machine the
+            human operator was the scheduler: load the deck, run it, wait, unload. The expensive machine sat
+            idle while a person thought, walked, and mounted tape.
+          </p>
+          <span class="tag src">source · s.30</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            The <b>resident monitor</b>: a program that always lives in memory, loads the next job, and gets
+            control back when that job finishes. Jobs are batched with a job control language, and the user
+            loses direct access to the processor entirely.
+          </p>
+          <span class="tag src">source · s.30–31</span>
+        </div>
+      </div>
+
+      <p>
+        This is the first time a program is not the most powerful thing in the machine. The monitor is. But
+        notice what has <em>not</em> changed: the batch still runs jobs one after another. When the current
+        job asks the card reader for data, the monitor has nothing else to run, because nothing else is in
+        memory. The interrupt bought control; it did not yet buy concurrency.
+      </p>
+
+      <div class="note">
+        <span class="nh">Nested interrupts — a detail worth carrying</span>
+        <p>
+          Once interrupts exist, an obvious question arrives: what if one arrives while another is being
+          handled? Two approaches are given <span class="tag src">s.14</span>: disable interrupts during
+          handling, or use a <b>priority scheme</b> so a more urgent event can pre-empt a lesser one.
+          Keep this — it is the same pattern as a scheduler pre-empting a process, one ring out.
+        </p>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 2">
+        <svg viewBox="0 0 720 220" role="img" aria-label="Batch processing: an operator batches jobs with job control language onto an input device; the monitor runs one job at a time and regains control when it ends.">
+          <text class="s-lbl-s" x="14" y="18" style="letter-spacing:.16em">BATCH · ONE JOB AT A TIME, NO HUMAN IN THE LOOP</text>
+
+          <rect class="s-box" x="14" y="46" width="104" height="52" rx="2"/>
+          <text class="s-lbl" x="66" y="68" text-anchor="middle">OPERATOR</text>
+          <text class="s-lbl-s" x="66" y="84" text-anchor="middle">batches jobs</text>
+
+          <path class="s-arrow" d="M118,72 H158" marker-end="url(#a1)"/>
+
+          <rect class="s-box" x="158" y="46" width="112" height="52" rx="2"/>
+          <text class="s-lbl" x="214" y="64" text-anchor="middle">JOB DECK</text>
+          <text class="s-lbl-s" x="214" y="80" text-anchor="middle">+ JCL cards</text>
+
+          <path class="s-arrow" d="M270,72 H310" marker-end="url(#a1)"/>
+
+          <rect x="310" y="38" width="150" height="68" rx="2" fill="rgba(15,78,88,.07)" stroke="rgba(15,78,88,.55)" stroke-width="1.3"/>
+          <text class="s-lbl" x="385" y="62" text-anchor="middle" style="fill:#0F4E58">MONITOR</text>
+          <text class="s-lbl-s" x="385" y="78" text-anchor="middle">always resident</text>
+          <text class="s-lbl-s" x="385" y="92" text-anchor="middle">loads · releases</text>
+
+          <path class="s-arrow" d="M460,72 H500" marker-end="url(#a1)"/>
+
+          <rect class="s-box" x="500" y="46" width="104" height="52" rx="2"/>
+          <text class="s-lbl" x="552" y="68" text-anchor="middle">JOB</text>
+          <text class="s-lbl-s" x="552" y="84" text-anchor="middle">runs</text>
+
+          <path class="s-arrow" d="M646,72 V126 H385 V106" marker-end="url(#a1)" stroke-dasharray="4 4"/>
+          <text class="s-lbl-s" x="516" y="140" text-anchor="middle">job ends → control returns to monitor</text>
+
+          <rect x="14" y="160" width="590" height="44" fill="rgba(168,65,30,.07)" stroke="rgba(168,65,30,.25)" stroke-dasharray="5 4"/>
+          <text class="s-lbl-s" x="26" y="178" style="fill:#A8411E">STILL SERIAL:</text>
+          <text class="s-lbl" x="26" y="194">while this job waits on I/O, the CPU waits with it — there is no second job in memory to run.</text>
+          <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.5)"/></marker></defs>
+        </svg>
+        <figcaption><b>Better, not parallel.</b> Removing the human removed human-speed delays. It did not remove I/O delays, and on hardware this expensive those delays were the whole problem <span class="tag src">s.30</span>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= RING 2 ================= -->
+  <section class="ring" id="ring2">
+    <div class="rail"><span class="n">02</span><span class="lbl">Interleave</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 2 · making the idle time usable</p>
+      <h2>Multiprogramming: keep a spare job in memory</h2>
+      <p class="intro">
+        The fix is almost embarrassingly simple: if the CPU is idle while a job waits for I/O, put
+        <em>several</em> jobs in memory and hand the CPU to whichever one can actually use it.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            Multiprogramming: multiple jobs resident at once, with the CPU interleaved between them. The
+            contrast case — one job at a time — is uniprogramming.
+          </p>
+          <span class="tag src">source · deck 1 s.32–33</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Uniprogramming wastes the most expensive resource in the building. Every I/O request is a stall
+            with nothing to fill it, and early machines were expensive enough that this was unacceptable.
+          </p>
+          <span class="tag src">source · s.30</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            When job A blocks, switch to job B. CPU utilization rises toward the fraction of time
+            <em>some</em> job is computable, not the fraction of time one particular job is.
+          </p>
+          <span class="tag inf">inferred from s.32–33</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 3">
+        <div class="util" role="img" aria-label="Timeline comparison. Uniprogramming: one job computing, then 50 percent idle while it waits for I/O. Multiprogramming with four jobs: CPU is busy almost the entire time because other jobs fill the wait.">
+          <div class="util-row">
+            <div class="util-name">One job in memory<span>uniprogramming</span></div>
+            <div class="bar">
+              <i class="b" style="width:22%"></i><i class="i wide" style="width:48%"></i><i class="b" style="width:14%"></i><i class="i" style="width:16%"></i>
+            </div>
+            <div class="util-val"><b>50%</b><em>busy</em></div>
+          </div>
+          <div class="util-row">
+            <div class="util-name">Four jobs in memory<span>multiprogramming</span></div>
+            <div class="bar">
+              <i class="b" style="width:13%"></i><i class="i" style="width:4%"></i><i class="b" style="width:11%"></i><i class="b" style="width:9%"></i><i class="i" style="width:3%"></i><i class="b" style="width:14%"></i><i class="b" style="width:12%"></i><i class="i" style="width:2%"></i><i class="b" style="width:11%"></i><i class="b" style="width:13%"></i><i class="i" style="width:2%"></i><i class="b" style="width:6%"></i>
+            </div>
+            <div class="util-val"><b>96%</b><em>busy</em></div>
+          </div>
+        </div>
+        <div class="util-legend">
+          <span><i style="background:rgba(15,78,88,.75)"></i> CPU executing</span>
+          <span><i style="background:repeating-linear-gradient(135deg,rgba(168,65,30,.18) 0 4px,rgba(168,65,30,.06) 4px 8px)"></i> CPU idle</span>
+        </div>
+        <figcaption><b>An illustrative model, not a measurement.</b> The shape is the lecture's point <span class="tag src">s.32–33</span>: with one job, idle time is unavoidable; with several, idle time becomes rare. The percentages are invented to make the contrast visible.</figcaption>
+      </figure>
+
+      <p class="pull">
+        And now a problem appears that no amount of hardware can solve: switching to job B and back to job A
+        means the machine has to remember <em>exactly</em> where A was — its program counter, its registers,
+        its memory, its open files. “A job” is no longer a good enough noun.
+        <span>the hinge of the whole course</span>
+      </p>
+
+      <p>
+        A batch job is a file. What the CPU switches between is something else: a live execution with a
+        position in the instruction stream and a set of held resources. Give that thing a name and a
+        record, and multiprogramming becomes implementable. The next ring is that name.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 3 ================= -->
+  <section class="ring tgt" id="ring3">
+    <div class="rail"><span class="n">03</span><span class="lbl">Target ring</span></div>
+    <div class="sec-body">
+      <p class="kicker">Target ring · the process</p>
+      <h2>A program, once it is actually running</h2>
+      <p class="intro">
+        The deck defines it four ways, and each definition adds something the previous one lacked: a program
+        in execution; an instance of a program running on a computer; the entity that can be assigned to and
+        executed on a processor; a unit of activity with a sequence of instructions, <em>a current state</em>,
+        and <em>an associated set of system resources</em>.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            The process: the OS's unit of execution. Not the code (that is a program, on disk), but the
+            running of it — with a position, a state, and resources it currently owns.
+          </p>
+          <span class="tag src">source · deck 2 s.5</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Multiprogramming needs something <b>resumable</b> and something <b>accountable</b>. Without a
+            record of where each execution stopped and what it holds, switching away destroys the thread of
+            execution, and no one can tell which process owns which memory page, file, or device.
+          </p>
+          <span class="tag inf">inferred from s.10, s.22–25</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            The process table / <b>PCB</b>: one entry per process holding its saved register image, state,
+            identity, memory limits and open files. To switch, save one PCB and load another. “The most
+            important data structure in an OS.”
+          </p>
+          <span class="tag src">source · s.22–25</span>
+        </div>
+      </div>
+
+      <p>
+        The slides call the process model “four independent, sequential processes” while only one is active
+        at a time <span class="tag src">s.10</span>. That is precisely the illusion the PCB makes real: each
+        process is allowed to believe it has a CPU of its own, because the OS can reconstruct it exactly.
+        Context switching is not magic. It is a save and a load.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 4">
+        <p class="s-lbl-s" style="margin:0 0 .55rem;letter-spacing:.16em">WHAT A PROCESS TABLE ENTRY HAS TO HOLD</p>
+        <div class="pcb-grid">
+          <div class="pcb-col">
+            <h4>Process management</h4>
+            <ul>
+              <li>registers (saved image)</li>
+              <li>program counter</li>
+              <li>stack pointer</li>
+              <li>process state</li>
+              <li>priority · scheduling data</li>
+              <li>process ID · parent ID</li>
+              <li>signals · time used</li>
+            </ul>
+          </div>
+          <div class="pcb-col">
+            <h4>Memory management</h4>
+            <ul>
+              <li>pointer to text segment</li>
+              <li>pointer to data segment</li>
+              <li>pointer to stack segment</li>
+              <li>memory limits / permissions</li>
+            </ul>
+          </div>
+          <div class="pcb-col">
+            <h4>File management</h4>
+            <ul>
+              <li>root directory</li>
+              <li>working directory</li>
+              <li>open file descriptors</li>
+              <li>user ID · group ID</li>
+            </ul>
+          </div>
+        </div>
+        <figcaption>
+          <b>Field list</b> <span class="tag ext">external</span> — the deck shows this as Figure 2.4 without
+          transcribing it; the grouping above is Tanenbaum's. What the deck does say is why it matters:
+          every module in the OS reads or modifies these blocks, they <em>define the state of the OS</em>, and
+          the difficulty is not access but <b>protection</b> — one buggy routine writing a PCB can destroy the
+          system's ability to manage processes <span class="tag src">s.25</span>.
+        </figcaption>
+      </figure>
+
+      <div class="demo" id="switchdemo">
+        <div class="demo-cpu">
+          <span class="lbl">CPU right now</span>
+          <code data-cpu>PC = 0x00A4 · R1 = 7 · R2 = 3</code>
+        </div>
+        <div class="demo-body">
+          <div class="proc run" data-p="A">
+            <h5>Process A <em data-status>running</em></h5>
+            <code data-live>PC = 0x00A4 · R1 = 7 · R2 = 3</code>
+            <code class="saved" data-saved>saved in PCB A: —</code>
+          </div>
+          <div class="proc" data-p="B">
+            <h5>Process B <em data-status>ready</em></h5>
+            <code data-live>PC = 0x1F20 · R1 = 12 · R2 = 0</code>
+            <code class="saved" data-saved>saved in PCB B: —</code>
+          </div>
+        </div>
+        <div class="demo-foot">
+          <p>A context switch is only these two moves: write the CPU into one PCB, read another into the CPU.</p>
+          <button class="btn" type="button" id="switchBtn">Switch process</button>
+        </div>
+      </div>
+      <p style="font-family:var(--mono);font-size:.66rem;color:var(--muted);margin-top:.5rem;letter-spacing:.02em">
+        Values are illustrative <span class="tag inf">inferred</span> — the mechanism is the point, not the numbers.
+      </p>
+
+      <p>
+        Two consequences fall straight out of this design, and both appear later in the course. First, if
+        PCBs are the source of truth, then only the kernel may touch them — which forces a privileged mode,
+        the subject of Ring 5. Second, if a process's entire state is a record, then a record can be
+        <em>moved to disk</em>. That is exactly what Ring 4 does when memory runs out.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 4 ================= -->
+  <section class="ring" id="ring4">
+    <div class="rail"><span class="n">04</span><span class="lbl">Lifecycle</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 4 · the process gets a life story</p>
+      <h2>Ready is not the same as blocked</h2>
+      <p class="intro">
+        A process is created, runs, waits, and dies. Encoding those situations as explicit states is what
+        lets the OS make correct scheduling decisions — and, when memory fills with processes that cannot
+        run, evict some of them.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            A state model: two-state at its simplest (running / not running), five-state in practice —
+            New, Ready, Running, Blocked, Exit — plus suspended variants that live on disk in a suspend
+            queue.
+          </p>
+          <span class="tag src">source · deck 2 s.13–21</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Two-State cannot schedule. “Not running” merges two opposite situations: <em>wants the CPU now</em>
+            and <em>cannot use the CPU until a disk answers</em>. Dispatch the wrong one and the CPU idles
+            again — the very failure Ring 2 was built to remove.
+          </p>
+          <span class="tag inf">inferred from s.13–14</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            Split the waiting process out as <b>Blocked</b>. When no resident process is Ready, swap a
+            blocked one out to disk and load a Ready/Suspend process in. The clock interrupt then makes
+            pre-emption periodic — CTSS did it every 0.2 seconds.
+          </p>
+          <span class="tag src">source · s.15, deck 1 s.35</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 5">
+        <div class="fsm" id="fsm">
+          <svg viewBox="0 0 760 270" role="img" aria-label="Five-state process model: New to Ready to Running; Running returns to Ready on timeout, goes to Blocked on an event wait, and to Exit on release; Blocked returns to Ready when the event occurs." class="fsm-svg">
+          <defs>
+            <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.45)"/>
+            </marker>
+          </defs>
+
+          <rect class="zone" x="10" y="12" width="738" height="244" rx="3"/>
+          <text class="zonelbl" x="20" y="30">main memory</text>
+
+          <path class="edge" data-from="new" data-to="ready" d="M140,89 H194" marker-end="url(#fa)"/>
+          <text class="elbl" data-e="new" x="167" y="80" text-anchor="middle">admit</text>
+
+          <path class="edge" data-from="ready" data-to="running" d="M330,89 H394" marker-end="url(#fa)"/>
+          <text class="elbl" data-e="ready" x="362" y="80" text-anchor="middle">dispatch</text>
+
+          <path class="edge" data-from="running" data-to="ready" d="M470,64 C470,22 265,22 265,62" marker-end="url(#fa)"/>
+          <text class="elbl" data-e="running" x="367" y="19" text-anchor="middle">timeout · pre-empt</text>
+
+          <path class="edge" data-from="running" data-to="exit" d="M540,89 H594" marker-end="url(#fa)"/>
+          <text class="elbl" x="567" y="80" text-anchor="middle">release</text>
+
+          <path class="edge" data-from="running" data-to="blocked" d="M470,114 V176" marker-end="url(#fa)"/>
+          <text class="elbl" x="478" y="148">event wait</text>
+
+          <path class="edge" data-from="blocked" data-to="ready" d="M400,205 H265 V118" marker-end="url(#fa)"/>
+          <text class="elbl" data-e="blocked" x="330" y="196" text-anchor="middle">event occurs</text>
+
+          <g class="node" data-state="new" role="button" tabindex="0" aria-label="New">
+            <rect x="30" y="64" width="110" height="50" rx="2"/>
+            <text x="85" y="94">New</text>
+          </g>
+          <g class="node" data-state="ready" role="button" tabindex="0" aria-label="Ready">
+            <rect x="200" y="64" width="130" height="50" rx="2"/>
+            <text x="265" y="94">Ready</text>
+          </g>
+          <g class="node" data-state="running" role="button" tabindex="0" aria-label="Running">
+            <rect x="400" y="64" width="140" height="50" rx="2"/>
+            <text x="470" y="94">Running</text>
+          </g>
+          <g class="node" data-state="blocked" role="button" tabindex="0" aria-label="Blocked">
+            <rect x="400" y="180" width="140" height="50" rx="2"/>
+            <text x="470" y="210">Blocked</text>
+          </g>
+          <g class="node" data-state="exit" role="button" tabindex="0" aria-label="Exit">
+            <rect x="600" y="64" width="110" height="50" rx="2"/>
+            <text x="655" y="94">Exit</text>
+          </g>
+        </svg>
+
+        <div class="fsm-panel" aria-live="polite">
+          <span class="st">select a state</span>
+          <h4 id="fsm-title">New</h4>
+          <ul id="fsm-body"></ul>
+        </div>
+      </div>
+
+      <div class="strip">
+        <p class="strip-title">When memory runs out — suspend &amp; swapping</p>
+        <svg viewBox="0 0 760 152" role="img" aria-label="Blocked is swapped out to disk becoming Blocked/Suspend; when the event occurs it becomes Ready/Suspend; activating it brings it back to Ready in memory.">
+          <defs>
+            <marker id="fb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.45)"/>
+            </marker>
+          </defs>
+
+          <rect class="s-box" x="18" y="52" width="110" height="50" rx="2"/>
+          <text class="s-lbl" x="73" y="82" text-anchor="middle">Blocked</text>
+
+          <path class="s-arrow" d="M128,77 H174" marker-end="url(#fb)"/>
+          <text class="s-lbl-s" x="151" y="40" text-anchor="middle" style="font-size:8.5px">swap out</text>
+
+          <rect x="178" y="52" width="152" height="50" rx="2" fill="#fff" stroke="rgba(25,23,18,.45)" stroke-dasharray="5 3"/>
+          <text class="s-lbl" x="254" y="82" text-anchor="middle" style="font-size:10px">Blocked/Suspend</text>
+
+          <path class="s-arrow" d="M330,77 H376" marker-end="url(#fb)"/>
+          <text class="s-lbl-s" x="353" y="40" text-anchor="middle" style="font-size:8.5px">event occurs</text>
+
+          <rect x="380" y="52" width="148" height="50" rx="2" fill="#fff" stroke="rgba(25,23,18,.45)" stroke-dasharray="5 3"/>
+          <text class="s-lbl" x="454" y="82" text-anchor="middle" style="font-size:10px">Ready/Suspend</text>
+
+          <path class="s-arrow" d="M528,77 H574" marker-end="url(#fb)"/>
+          <text class="s-lbl-s" x="551" y="40" text-anchor="middle" style="font-size:8.5px">activate</text>
+
+          <rect class="s-box" x="578" y="52" width="110" height="50" rx="2"/>
+          <text class="s-lbl" x="633" y="82" text-anchor="middle">Ready</text>
+
+          <path d="M178,112 V118 H528 V112" class="s-dash" stroke-dasharray="3 3"/>
+          <text class="s-lbl-s" x="353" y="134" text-anchor="middle" style="font-size:8.5px;letter-spacing:.1em">BOTH STATES LIVE ON DISK · THE SUSPEND QUEUE</text>
+          <text class="s-lbl-s" x="18" y="150" style="font-size:9px">A suspended process may not be waiting on any event at all — and only an agent (itself, its parent, the OS) may release it.</text>
+        </svg>
+      </div>
+        <figcaption>
+          <b>Click any state.</b> Transitions and their triggers <span class="tag src">s.13–21</span>. The
+          strip below answers a different emergency: memory full of processes that cannot run. The slides are
+          explicit that swapping “is an I/O operation and therefore there is the potential for making the
+          problem worse” — it usually helps only because disk is the fastest I/O available
+          <span class="tag src">s.15</span>.
+        </figcaption>
+      </figure>
+
+      <p>
+        Two details from this ring that students tend to skip. First, a suspended process is not simply
+        blocked: it may not be waiting on an event at all, it is not immediately executable, and it stays
+        suspended until an <em>agent</em> — itself, its parent, or the OS — explicitly releases it
+        <span class="tag src">s.17</span>. Second, the two-state model is not wrong so much as
+        under-specified; it is what you get if you only ask “is it on the CPU?”
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 5 ================= -->
+  <section class="ring" id="ring5">
+    <div class="rail"><span class="n">05</span><span class="lbl">Interface</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 5 · the door into the kernel</p>
+      <h2>Modes, and the calls that cross them</h2>
+      <p class="intro">
+        Everything above lives behind a wall. The PCB “defines the state of the OS”, so user code must not
+        touch it — which raises the obvious practical question: how does an ordinary program ever get
+        anything done?
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            Two execution modes — user and kernel — and a system-call interface. A call from C invokes a
+            library procedure of the same name, which traps into the kernel.
+          </p>
+          <span class="tag src">source · deck 1 s.36, deck 2 s.26–29</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Protected state cannot be edited directly, or one buggy routine takes the machine down. But a
+            process must still be able to create, replace, and end processes. Protection without a doorway is
+            a machine nobody can use.
+          </p>
+          <span class="tag inf">inferred from s.25 + deck 1 s.36</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            A controlled crossing: <b>fork()</b> duplicates the address space; <b>exec()</b> replaces the
+            program image in place; wait and exit complete the set. UNIX SVR4 also lets most of the OS run
+            inside a user process's environment, in kernel mode.
+          </p>
+          <span class="tag src">source · deck 2 s.28–37</span>
+        </div>
+      </div>
+
+      <p>
+        <b>fork()</b> is the strange one, and the strangeness is the lesson. It returns <em>twice</em>, in two
+        different processes, with different values. Both copies have the same address space and run
+        independently from that point on <span class="tag src">deck 2 s.31–32</span>. So the program itself
+        has to branch on the return value to know which of the two it is.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 6">
+        <svg viewBox="0 0 720 210" role="img" aria-label="fork makes two copies of an address space; parent and child then diverge. exec replaces the child's program image, keeping the same process.">
+          <rect class="s-box" x="18" y="70" width="128" height="56" rx="2"/>
+          <text class="s-lbl" x="82" y="94" text-anchor="middle">shell</text>
+          <text class="s-lbl-s" x="82" y="110" text-anchor="middle">PID 1000</text>
+
+          <path class="s-arrow" d="M146,98 H192" marker-end="url(#a6)"/>
+          <text class="s-lbl-s" x="169" y="90" text-anchor="middle">fork()</text>
+
+          <path class="s-arrow" d="M220,86 C270,52 300,42 340,42" marker-end="url(#a6)"/>
+          <path class="s-arrow" d="M220,110 C270,140 300,150 340,150" marker-end="url(#a6)"/>
+
+          <rect x="340" y="18" width="150" height="48" rx="2" fill="rgba(15,78,88,.07)" stroke="rgba(15,78,88,.5)" stroke-width="1.2"/>
+          <text class="s-lbl" x="415" y="38" text-anchor="middle">parent · PID 1000</text>
+          <text class="s-lbl-s" x="415" y="54" text-anchor="middle">fork returned 1001</text>
+
+          <rect x="340" y="126" width="150" height="48" rx="2" fill="rgba(168,65,30,.07)" stroke="rgba(168,65,30,.5)" stroke-width="1.2"/>
+          <text class="s-lbl" x="415" y="146" text-anchor="middle">child · PID 1001</text>
+          <text class="s-lbl-s" x="415" y="162" text-anchor="middle">fork returned 0</text>
+
+          <path class="s-arrow" d="M490,150 H534" marker-end="url(#a6)"/>
+          <text class="s-lbl-s" x="512" y="140" text-anchor="middle">exec()</text>
+
+          <rect class="s-box" x="534" y="120" width="164" height="60" rx="2" stroke-dasharray="5 3"/>
+          <text class="s-lbl" x="616" y="140" text-anchor="middle">ls -la</text>
+          <text class="s-lbl-s" x="616" y="156" text-anchor="middle">same PID 1001</text>
+          <text class="s-lbl-s" x="616" y="170" text-anchor="middle">new text + data + stack</text>
+
+          <text class="s-lbl-s" x="340" y="196" style="fill:#A8411E">exec does not create a process — it overwrites one.</text>
+          <defs><marker id="a6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.5)"/></marker></defs>
+        </svg>
+        <figcaption><b>The shell's standard trick.</b> fork first, so the shell survives; exec second, so the child becomes the command. Both are described in the deck <span class="tag src">s.31–38</span>.</figcaption>
+      </figure>
+
+      <div class="code-wrap">
+        <div class="ch"><span>fork() · annotated</span><span>deck 2, s.34</span></div>
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+
+int main(void) {
+    pid_t retval = fork();        <u>/* returns TWICE: 0 in child, child-PID in parent */</u>
+
+    if (retval == 0) {            <i>/* child branch */</i>
+        printf("Child  PID: %d\n", getpid());
+    } else if (retval &gt; 0) {      <i>/* parent branch */</i>
+        printf("Parent PID: %d (child %d)\n", getpid(), retval);
+    } else {                      <u>/* retval == -1 : fork failed, no child exists */</u>
+        printf("Unable to fork child\n");
+    }
+    return 0;
+}</code></pre>
+      </div>
+
+      <div class="note">
+        <span class="nh">Two things the slides get slightly wrong — check them in a compiler</span>
+        <p>
+          The printed listing calls <code>exit</code> without parentheses. In C that evaluates a function
+          pointer and discards it; it exits nothing, and the child falls through into the parent's branch.
+          It needs <code>exit(0);</code> <span class="tag inf">inferred: C semantics</span>.
+        </p>
+        <p>
+          And in the <code>execl("/usr/bin/ls", "ls", "-la", 0)</code> example, the line
+          <code>cout &lt;&lt; "done";</code> never runs. That is not a quirk — it is the definition of exec.
+          The image that contained that statement no longer exists <span class="tag src">s.38</span>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RING 6 ================= -->
+  <section class="ring" id="ring6">
+    <div class="rail"><span class="n">06</span><span class="lbl">Threads</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 6 · the process is too heavy a unit</p>
+      <h2>Threads: splitting execution from ownership</h2>
+      <p class="intro">
+        A process is two jobs wearing one coat: it <em>owns</em> an address space, and it <em>runs</em>.
+        Threads are what you get when you pull those roles apart — and every trade-off in this ring comes
+        from one decision: where the scheduler lives.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            “A unit of execution within a process” — a stream of instructions with its own registers,
+            stack and program counter, sharing the process's code, data and open files. The slides also
+            call it a lightweight process.
+          </p>
+          <span class="tag src">source · threads s.5</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Concurrency inside one program required a whole new process: a new address space, a new PCB,
+            a full context switch. And the cheap alternative has its own cliff — with user-level threads,
+            one blocking system call freezes every thread, and a second CPU cannot be used at all.
+          </p>
+          <span class="tag src">source · s.12–14</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            Share the address space and switch only registers and stack. Then choose where scheduling
+            happens: in the application's library (ULT), in the kernel (KLT), or both at once (hybrid, as
+            Solaris does).
+          </p>
+          <span class="tag src">source · s.12–19</span>
+        </div>
+      </div>
+
+      <p>
+        The consequence of a ULT is worth stating plainly, because it is the exam question: “when a ULT
+        executes a system call, not only is that thread blocked, but all of the threads within the process
+        are blocked as well” <span class="tag src">s.14</span>. The kernel never knew those other threads
+        existed. Kernel-level threads fix that, and pay for it with a mode switch on every switch — the
+        deck points at Table 4.1 and its measured latencies <span class="tag src">s.18</span>.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 7">
+        <svg viewBox="0 0 760 290" role="img" aria-label="One process address space containing shared code, data and open files, with three threads each keeping private registers, stack and program counter.">
+          <rect x="14" y="14" width="732" height="206" rx="3" fill="none" stroke="rgba(25,23,18,.32)" stroke-dasharray="5 4"/>
+          <text class="s-lbl-s" x="26" y="34" style="letter-spacing:.14em">PROCESS · ONE ADDRESS SPACE, ONE FILE TABLE</text>
+
+          <rect x="34" y="50" width="166" height="152" rx="2" fill="rgba(15,78,88,.06)" stroke="rgba(15,78,88,.45)"/>
+          <text class="s-lbl" x="117" y="74" text-anchor="middle" style="fill:#0F4E58">SHARED</text>
+          <line x1="50" y1="86" x2="184" y2="86" stroke="rgba(15,78,88,.25)"/>
+          <text class="s-lbl-s" x="117" y="108" text-anchor="middle">code</text>
+          <text class="s-lbl-s" x="117" y="130" text-anchor="middle">data</text>
+          <text class="s-lbl-s" x="117" y="152" text-anchor="middle">open files</text>
+          <text class="s-lbl-s" x="117" y="184" text-anchor="middle" style="fill:#0F4E58;font-size:8.6px">one copy, not three</text>
+
+          <rect x="224" y="50" width="148" height="152" rx="2" fill="#fff" stroke="rgba(25,23,18,.4)"/>
+          <text class="s-lbl" x="298" y="74" text-anchor="middle">THREAD 1</text>
+          <line x1="240" y1="86" x2="356" y2="86" stroke="rgba(25,23,18,.15)"/>
+          <text class="s-lbl-s" x="298" y="108" text-anchor="middle">registers</text>
+          <text class="s-lbl-s" x="298" y="128" text-anchor="middle">stack</text>
+          <text class="s-lbl-s" x="298" y="148" text-anchor="middle">program counter</text>
+          <text class="s-lbl-s" x="298" y="184" text-anchor="middle" style="fill:#A8411E;font-size:8.6px">private</text>
+
+          <rect x="404" y="50" width="148" height="152" rx="2" fill="#fff" stroke="rgba(25,23,18,.4)"/>
+          <text class="s-lbl" x="478" y="74" text-anchor="middle">THREAD 2</text>
+          <line x1="420" y1="86" x2="536" y2="86" stroke="rgba(25,23,18,.15)"/>
+          <text class="s-lbl-s" x="478" y="108" text-anchor="middle">registers</text>
+          <text class="s-lbl-s" x="478" y="128" text-anchor="middle">stack</text>
+          <text class="s-lbl-s" x="478" y="148" text-anchor="middle">program counter</text>
+          <text class="s-lbl-s" x="478" y="184" text-anchor="middle" style="fill:#A8411E;font-size:8.6px">private</text>
+
+          <rect x="584" y="50" width="148" height="152" rx="2" fill="#fff" stroke="rgba(25,23,18,.4)"/>
+          <text class="s-lbl" x="658" y="74" text-anchor="middle">THREAD 3</text>
+          <line x1="600" y1="86" x2="716" y2="86" stroke="rgba(25,23,18,.15)"/>
+          <text class="s-lbl-s" x="658" y="108" text-anchor="middle">registers</text>
+          <text class="s-lbl-s" x="658" y="128" text-anchor="middle">stack</text>
+          <text class="s-lbl-s" x="658" y="148" text-anchor="middle">program counter</text>
+          <text class="s-lbl-s" x="658" y="184" text-anchor="middle" style="fill:#A8411E;font-size:8.6px">private</text>
+
+          <text class="s-lbl-s" x="14" y="246" style="font-size:9.5px">A thread switch saves registers, stack pointer and PC — not the address space.</text>
+          <text class="s-lbl-s" x="14" y="268" style="font-size:9.5px;fill:#A8411E">The catch: all three share one copy of the data. That is Ring 8.</text>
+        </svg>
+        <figcaption><b>What is shared and what is not</b> <span class="tag src">s.5, s.12–19</span>. The kernel may see this as one schedulable object (ULT) or as three (KLT) — same picture, different tax.</figcaption>
+      </figure>
+
+      <div class="tablewrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>implementation</th><th>who schedules</th><th>switch cost</th><th>blocking call</th><th>second CPU</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User-level (ULT)</td>
+              <td>the application's own thread library; the kernel sees only a process</td>
+              <td>no kernel involvement</td>
+              <td>blocks every thread in the process</td>
+              <td>no — one process is assigned to one processor</td>
+            </tr>
+            <tr>
+              <td>Kernel-level (KLT)</td>
+              <td>the kernel itself (Windows is the deck's example)</td>
+              <td>a mode switch to the kernel per switch</td>
+              <td>only the calling thread blocks</td>
+              <td>yes — threads run on different processors</td>
+            </tr>
+            <tr>
+              <td>Hybrid</td>
+              <td>library multiplexes many ULTs onto fewer KLTs (Solaris)</td>
+              <td>user space, with kernel threads underneath</td>
+              <td>contained to that thread's KLT</td>
+              <td>yes, up to the number of KLTs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--mono);font-size:.64rem;color:var(--muted);margin-top:-.6rem;max-width:none">
+        <span class="tag src">source · s.12–19</span> &nbsp;the last two columns of the hybrid row are
+        <span class="tag inf">inferred</span> from the multiplexing figure (2.16), which shows ULTs sharing KLTs.
+      </p>
+
+      <p>
+        The deck's fourth objective is “programming using threads”, and the API is the shortest summary of
+        everything above it: create, join, and know what the arguments are. The call itself tells you which
+        of the three implementations you are talking to — a library, or a kernel.
+      </p>
+
+      <div class="code-wrap">
+        <div class="ch"><span>pthreads · create, join, and what the arguments mean</span><span>deck 3, s.37–42</span></div>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;pthread.h&gt;
+
+void* task1(void* x) {                        <i>/* func: must be void* → void* */</i>
+    int* temp = (int*)x;                      <u>/* arg arrives as the same void* */</u>
+    for (int count = 0; count &lt; *temp; count++)
+        cout &lt;&lt; "Thread A" &lt;&lt; endl;             <u>/* unsynchronised: Ring 8's race, on a stream */</u>
+    return NULL;
+}
+
+int main(int argc, char** argv) {
+    pthread_t thread_a, thread_b;             <i>/* obj: the handle that names the thread */</i>
+    int N = atoi(argv[1]);
+
+    pthread_create(&amp;thread_a, NULL, task1, &amp;N);    <u>/* attr NULL → default scheduling + priority */</u>
+    pthread_create(&amp;thread_b, NULL, task2, &amp;N);
+    cout &lt;&lt; "Waiting to join" &lt;&lt; endl;
+
+    pthread_join(thread_a, NULL);             <i>/* suspends the caller until A terminates */</i>
+    pthread_join(thread_b, NULL);             <u>/* and releases its resources: no zombie threads */</u>
+    return 0;
+}</code></pre>
+      </div>
+
+      <div class="note">
+        <span class="nh">Two things to check before you run the deck's listing</span>
+        <p>
+          The printed loop header reads <code>for (int count 0; …)</code> — the <code>=</code> is missing, so it
+          does not compile <span class="tag inf">inferred: C syntax</span>. The deck's own annotation is the
+          useful part: <code>func</code> may take only a <code>void*</code>, <code>arg</code> is that same
+          <code>void*</code> passed straight through, <code>attr</code> NULL means default scheduling and
+          priority, and the call returns 0 on success <span class="tag src">s.37</span>.
+        </p>
+        <p>
+          And both threads write <code>cout</code> with nothing between them. Thread A's and thread B's lines
+          will interleave inside each other, which is Ring 8 arriving early: the shared object is a stream
+          instead of an integer, and the same lost-update argument applies.
+        </p>
+      </div>
+
+      <p>
+        <code>pthread_join</code> is the part students skip and examiners ask about: without it the parent may
+        exit first, and the finished thread's resources are never reclaimed — the deck's word for that is a
+        <b>zombie thread</b> <span class="tag src">s.40</span>. Joining is the reaping, not the waiting.
+      </p>
+
+      <p>
+        Servers are where the thread decision turns into throughput, and the deck reduces the design space to
+        three shapes <span class="tag src">s.21–22</span>. They differ only in what the OS is asked to schedule.
+      </p>
+
+      <div class="tablewrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>server design</th><th>what is schedulable</th><th>what you pay</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Thread per request</td>
+              <td>one thread per connection, created on arrival and destroyed at the end</td>
+              <td>create/destroy cost per request; a burst of connections creates a burst of threads</td>
+            </tr>
+            <tr>
+              <td>Thread pool</td>
+              <td>a fixed set of workers pulling requests from a queue</td>
+              <td>bounded concurrency, so a slow handler starves the queue; Windows calls the workers a
+                <em>thread pool</em> explicitly <span class="tag src">s.23</span></td>
+            </tr>
+            <tr>
+              <td>Event-driven</td>
+              <td>no threads at all: one finite-state machine per connection, driven by events through
+                non-blocking calls</td>
+              <td>“thread can be considered expensive especially when high throughput is requested”
+                <span class="tag src">s.21</span>; the state machine has to be written by hand</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--mono);font-size:.64rem;color:var(--muted);margin-top:-.6rem;max-width:none">
+        <span class="tag src">source · s.21–22</span> &nbsp;the middle column of the pool row and the “what you
+        pay” column are <span class="tag inf">inferred</span>: the deck shows Figure 2.20 as an image and
+        describes only the event-driven case in text.
+      </p>
+
+      <p>
+        The last table of this ring is worth having because it shows the abstraction being re-invented rather
+        than copied. Every kernel names the same object differently and solves the same two problems — who is
+        schedulable, and what is shared.
+      </p>
+
+      <div class="tablewrap">
+        <table class="tbl">
+          <thead><tr><th>system</th><th>the unit it schedules</th><th>what the deck names</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Windows</td>
+              <td>a thread object inside a process object; the kernel schedules the thread</td>
+              <td>job objects (group processes), thread pools (async callbacks), fibers (manually scheduled),
+                user-mode scheduling <span class="tag src">s.23</span></td>
+            </tr>
+            <tr>
+              <td>Solaris</td>
+              <td>a kernel thread, bound to a lightweight process (LWP) that carries the user thread</td>
+              <td>four thread concepts; the LWP holds the saved registers, signal mask, kernel stack,
+                priority and a pointer back to its process <span class="tag src">s.28–29</span></td>
+            </tr>
+            <tr>
+              <td>Linux</td>
+              <td>one object for both: the task</td>
+              <td>the deck's Linux slides are figures, so the naming here is
+                <span class="tag ext">external</span>: a thread is a task created sharing its parent's
+                address space, which is why thread and process creation are the same system call</td>
+            </tr>
+            <tr>
+              <td>Android</td>
+              <td>a process per application, threads inside it</td>
+              <td>components that can be activated independently — activity, service, content provider,
+                broadcast receiver <span class="tag src">s.34</span>; IPC by Binder, a lightweight RPC over
+                <code>ioctl</code> <span class="tag src">deadlock s.40</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        One more use of the idea closes the ring, in the opposite direction. If a thread per connection is too
+        expensive, an <b>event-driven server</b> replaces the threads with a finite-state machine that reacts
+        to events through non-blocking calls <span class="tag src">s.21</span> — the same trade made the other
+        way: concurrency without the per-thread stack, and a program the OS can no longer help you debug.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 7 ================= -->
+  <section class="ring" id="ring7">
+    <div class="rail"><span class="n">07</span><span class="lbl">Schedule</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 7 · the ready queue needs a policy</p>
+      <h2>Scheduling: choosing is a value judgement</h2>
+      <p class="intro">
+        Ring 4 gave Ready a queue. It did not say who goes first — and that single choice decides whether
+        the machine feels fast, fair, or merely busy.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            Assign processes to the processor so the system meets its objectives. Three time scales:
+            long-term admits programs and sets the degree of multiprogramming, medium-term is the swapping
+            decision, short-term is the dispatcher — invoked whenever a process blocks or could be pre-empted.
+          </p>
+          <span class="tag src">source · sched s.6–10</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            First come, first served is the obvious policy, and the deck's own example shows what it
+            costs: bursts 24, 3, 3 in arrival order average a 17-unit wait. FCFS “performs much better for
+            long processes than short ones” and favours processor-bound work over I/O-bound.
+          </p>
+          <span class="tag src">source · s.19–20</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            Separate the <b>selection function</b> (priority, resource needs, or w/e/s — waiting, executed,
+            total service) from the <b>decision mode</b> (pre-emptive or not). Policy becomes a plug-in
+            rather than a property of the queue.
+          </p>
+          <span class="tag src">source · s.15–16</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 8">
+        <div class="gantt">
+          <div class="gantt-row">
+            <div class="gantt-name">FCFS<span>arrival order P1 P2 P3</span></div>
+            <div class="gantt-bar">
+              <i class="g1" style="width:80%">P1 · 24</i><i class="g2" style="width:10%">P2</i><i class="g3" style="width:10%">P3</i>
+            </div>
+            <div class="gantt-val"><b>17</b>average wait</div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-name">Shortest job first<span>non-preemptive</span></div>
+            <div class="gantt-bar">
+              <i class="g2" style="width:10%">P2</i><i class="g3" style="width:10%">P3</i><i class="g1" style="width:80%">P1 · 24</i>
+            </div>
+            <div class="gantt-val"><b>3</b>average wait</div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-name">Round robin<span>quantum = 4</span></div>
+            <div class="gantt-bar">
+              <i class="g1" style="width:13.33%">P1</i><i class="g2" style="width:10%">P2</i><i class="g3" style="width:10%">P3</i><i class="g1" style="width:13.33%">P1</i><i class="g1" style="width:13.33%">P1</i><i class="g1" style="width:13.33%">P1</i><i class="g1" style="width:13.33%">P1</i><i class="g1" style="width:13.35%">P1</i>
+            </div>
+            <div class="gantt-val"><b>5.7</b>average wait</div>
+          </div>
+        </div>
+        <div class="gantt-axis"><span>0</span><span>15</span><span>30</span></div>
+        <figcaption>
+          <b>Same three jobs, three policies.</b> Bursts 24, 3, 3 in arrival order <span class="tag src">s.20</span>;
+          the 17 is the deck's own arithmetic. The SJF and round-robin averages are <span class="tag inf">inferred</span>
+          — computed from the same bursts, with a quantum I chose. Note what FCFS does to P3: it waits 27
+          units for three units of work, which is the response-time argument for round robin in one picture.
+        </figcaption>
+      </figure>
+
+      <p>
+        Each algorithm is one answer to the same tension. SPN/SJF minimises average waiting and is
+        impossible in practice without knowing the future — and it starves long jobs. SRT makes it
+        pre-emptive. Round robin bounds response time with a quantum, which is its whole design question.
+        HRRN divides by service time but adds age, so a long job eventually wins. Multilevel queues with
+        feedback demote CPU-hungry processes and promote the patient. Fair share stops scheduling processes
+        altogether and schedules users <span class="tag src">s.21–30</span>.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 9">
+        <svg viewBox="0 0 760 272" role="img" aria-label="Two timelines. User-level threads: process A runs for its full 50 millisecond quantum while ten thread switches happen invisibly inside it, then process B. Kernel-level threads: the same threads alternate in 5 millisecond quanta, so every switch is a scheduling decision.">
+          <text class="s-lbl-s" x="24" y="26" style="letter-spacing:.14em">USER-LEVEL THREADS · THE KERNEL SCHEDULES PROCESS A, NOT ITS THREADS</text>
+          <rect x="24" y="40" width="300" height="42" fill="rgba(27,92,102,.85)"/>
+          <rect x="324" y="40" width="300" height="42" fill="rgba(168,65,30,.8)"/>
+          <g stroke="rgba(255,253,246,.55)" stroke-width="1">
+            <line x1="54" y1="40" x2="54" y2="82"/><line x1="84" y1="40" x2="84" y2="82"/>
+            <line x1="114" y1="40" x2="114" y2="82"/><line x1="144" y1="40" x2="144" y2="82"/>
+            <line x1="174" y1="40" x2="174" y2="82"/><line x1="204" y1="40" x2="204" y2="82"/>
+            <line x1="234" y1="40" x2="234" y2="82"/><line x1="264" y1="40" x2="264" y2="82"/>
+            <line x1="294" y1="40" x2="294" y2="82"/>
+            <line x1="354" y1="40" x2="354" y2="82"/><line x1="384" y1="40" x2="384" y2="82"/>
+            <line x1="414" y1="40" x2="414" y2="82"/><line x1="444" y1="40" x2="444" y2="82"/>
+            <line x1="474" y1="40" x2="474" y2="82"/><line x1="504" y1="40" x2="504" y2="82"/>
+            <line x1="534" y1="40" x2="534" y2="82"/><line x1="564" y1="40" x2="564" y2="82"/>
+            <line x1="594" y1="40" x2="594" y2="82"/>
+          </g>
+          <text class="s-lbl" x="174" y="67" text-anchor="middle" style="fill:#FFFDF6">process A · 50 ms</text>
+          <text class="s-lbl" x="474" y="67" text-anchor="middle" style="fill:#FFFDF6">process B · 50 ms</text>
+          <text class="s-lbl-s" x="24" y="102" style="fill:#0F4E58">ten 5 ms thread bursts inside one quantum — every thread switch is invisible to the OS</text>
+
+          <text class="s-lbl-s" x="24" y="146" style="letter-spacing:.14em">KERNEL-LEVEL THREADS · EVERY THREAD GETS ITS OWN QUANTUM</text>
+          <g>
+            <rect x="24" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="54" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="84" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="114" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="144" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="174" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="204" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="234" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="264" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="294" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="324" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="354" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="384" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="414" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="444" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="474" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="504" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="534" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+            <rect x="564" y="160" width="30" height="42" fill="rgba(27,92,102,.85)"/>
+            <rect x="594" y="160" width="30" height="42" fill="rgba(168,65,30,.8)"/>
+          </g>
+          <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#FFFDF6" text-anchor="middle">
+            <text x="39" y="186">A</text><text x="69" y="186">B</text><text x="99" y="186">A</text>
+            <text x="129" y="186">B</text><text x="159" y="186">A</text><text x="189" y="186">B</text>
+            <text x="219" y="186">A</text><text x="249" y="186">B</text><text x="279" y="186">A</text>
+            <text x="309" y="186">B</text><text x="339" y="186">A</text><text x="369" y="186">B</text>
+            <text x="399" y="186">A</text><text x="429" y="186">B</text><text x="459" y="186">A</text>
+            <text x="489" y="186">B</text><text x="519" y="186">A</text><text x="549" y="186">B</text>
+            <text x="579" y="186">A</text><text x="609" y="186">B</text>
+          </g>
+          <text class="s-lbl-s" x="24" y="222" style="fill:#A8411E">same 100 ms, twenty dispatches — fair per thread, and a mode switch per switch</text>
+
+          <line x1="24" y1="240" x2="624" y2="240" stroke="rgba(25,23,18,.25)"/>
+          <g class="s-lbl-s" text-anchor="middle">
+            <text x="24" y="256">0</text><text x="174" y="256">25</text><text x="324" y="256">50</text>
+            <text x="474" y="256">75</text><text x="624" y="256">100 ms</text>
+          </g>
+        </svg>
+        <figcaption>
+          <b>Threads and the quantum.</b> The deck's Figure 2.45 settings — a 50 ms process quantum and threads
+          that run 5 ms per CPU burst <span class="tag src">s.31</span> — drawn as a timeline. The layouts are
+          <span class="tag inf">inferred</span> from that description, and they are the whole argument for
+          kernel threads: under ULT the OS never chooses between A and B inside a quantum, so a thread that
+          keeps computing keeps the whole process's slice, while under KLT the fairness is per thread and the
+          bill is paid in mode switches.
+        </figcaption>
+      </figure>
+
+      <p>
+        That figure is also the bridge back to Ring 6: the same 5 ms burst behaves differently depending on
+        who is counting it. Scheduling does not start below the process — it starts wherever the kernel's
+        scheduler can see.
+      </p>
+
+      <p>
+        The criteria conflict by construction — CPU utilisation, throughput, turnaround, waiting time,
+        response time <span class="tag src">s.14</span>. Choosing an algorithm is choosing which of the
+        five you are willing to lose, which is why the deck lists goals by workload type (batch, interactive,
+        real time) rather than crowning a winner <span class="tag src">s.17–18</span>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 8 ================= -->
+  <section class="ring" id="ring8">
+    <div class="rail"><span class="n">08</span><span class="lbl">Sync</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 8 · sharing makes the answer order-dependent</p>
+      <h2>Synchronisation: whoever writes last decides</h2>
+      <p class="intro">
+        Threads share memory. That is the entire point of them, and it is also the bug: two threads reading
+        and writing the same word have no agreement about order, and neither does the program.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            Concurrency is interleaving (one CPU, switched) or overlapping (several CPUs) — “both present
+            the same problems”. A critical section is the part of a program that touches shared data;
+            mutual exclusion means at most one process is inside its critical section for that object.
+          </p>
+          <span class="tag src">source · sync s.6, s.14</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            A race condition: processes read and write the same items and the final result depends on the
+            order of execution — “the loser of the race is the process that updates last”. Such bugs are
+            neither deterministic nor reproducible.
+          </p>
+          <span class="tag src">source · s.9, s.7</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            Make the interval un-interruptible, or make entry to it exclusive: disable interrupts
+            (uniprocessor only), atomic compare-and-swap or TSL, strict alternation, Peterson's solution,
+            semaphores, monitors, or message passing.
+          </p>
+          <span class="tag src">source · s.17–39</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 10">
+        <div class="tablewrap" style="margin:0">
+          <table class="tbl">
+            <thead>
+              <tr><th>step</th><th>thread 1</th><th>thread 2</th><th>counter</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td><code>LOAD counter → r1</code> &nbsp; r1 = 0</td><td>—</td><td>0</td></tr>
+              <tr><td>2</td><td>—</td><td><code>LOAD counter → r2</code> &nbsp; r2 = 0</td><td>0</td></tr>
+              <tr><td>3</td><td><code>ADD r1, 1</code></td><td>—</td><td>0</td></tr>
+              <tr><td>4</td><td>—</td><td><code>ADD r2, 1</code></td><td>0</td></tr>
+              <tr><td>5</td><td><code>STORE r1 → counter</code></td><td>—</td><td>1</td></tr>
+              <tr style="background:rgba(168,65,30,.08)"><td>6</td><td>—</td><td><code>STORE r2 → counter</code></td><td><b>1</b> · one increment lost</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>
+          <b>Two increments, one result.</b> Both threads loaded 0 and both wrote 1, so the program believes
+          it added twice and the counter says otherwise. The race is not a bug in either thread — it is a
+          property of the interleaving <span class="tag src">s.9</span>; this particular schedule is
+          <span class="tag inf">inferred</span> from the definition.
+        </figcaption>
+      </figure>
+
+      <p>The deck states the requirements for a correct solution as four rules <span class="tag src">s.14</span>:</p>
+      <ol class="reqs">
+        <li>No two processes may be simultaneously inside their critical regions.</li>
+        <li>No assumptions may be made about speeds or the number of CPUs.</li>
+        <li>No process running outside its critical region may block any process.</li>
+        <li>No process should have to wait forever to enter its critical region.</li>
+      </ol>
+
+      <p>
+        Rule 2 is the one that ages the whole ring, and Ring 10 will collect on it. Note also what the deck
+        does with cost: <code>semWait</code> and <code>semSignal</code> “must be implemented as atomic
+        primitives”, in hardware or firmware, or on top of Dekker/Peterson/TSL <span class="tag src">s.24, s.34</span>.
+        Monitors then move the discipline into the language, with condition variables and
+        <code>cwait</code>/<code>csignal</code> <span class="tag src">s.35–37</span>.
+      </p>
+
+      <p>
+        The deck's third objective is to <em>compare</em> these mechanisms, and comparison needs a fixed
+        problem. Two problems do that work for the whole ring.
+      </p>
+
+      <h3 class="sub">Producer/consumer, on a bounded buffer</h3>
+      <p>
+        A producer appends items to a buffer of N slots, a consumer removes them. Three separate conditions
+        hide in that sentence: one writer at a time inside the buffer, no appending into a full buffer, and no
+        removing from an empty one. Three semaphores, one per condition, and the code almost writes itself
+        <span class="tag src">s.28–30</span>.
+      </p>
+
+      <div class="code-wrap">
+        <div class="ch"><span>bounded buffer · three semaphores, two processes</span><span>deck 6, s.29–30</span></div>
+<pre><code>semaphore mutex = 1;      <i>/* mutual exclusion: one process inside at a time */</i>
+semaphore empty = N;      <u>/* free slots  — the producer waits on this */</u>
+semaphore full  = 0;      <u>/* filled slots — the consumer waits on this */</u>
+
+producer()                                  consumer()
+  while (true) {                              while (true) {
+      semWait(empty);                             semWait(full);
+      semWait(mutex);                             semWait(mutex);
+      buffer[in] = item;                          item = buffer[out];
+      in = (in + 1) % N;                          out = (out + 1) % N;
+      semSignal(mutex);                           semSignal(mutex);
+      semSignal(full);                            semSignal(empty);
+  }                                           }</code></pre>
+      </div>
+
+      <div class="note">
+        <span class="nh">The order of the two waits is the exam question</span>
+        <p>
+          Swap the first two lines in the producer so it takes <code>mutex</code> before <code>empty</code>.
+          Nothing looks wrong, and when the buffer fills the producer blocks <em>holding the lock</em>; the
+          consumer can never get in to free a slot, and both sleep forever. One reordered line manufactures
+          Ring 9 out of Ring 8 <span class="tag inf">inferred</span>.
+        </p>
+        <p>
+          <code>semWait</code> and <code>semSignal</code> themselves must be atomic
+          <span class="tag src">s.34</span>, which is why the argument stops at hardware instructions and
+          never quite leaves them.
+        </p>
+      </div>
+
+      <h3 class="sub">Readers/writers: when exclusion is the wrong shape</h3>
+      <p>
+        A data area is read by many processes and written by some. The deck states the three conditions
+        exactly <span class="tag src">s.31</span>:
+      </p>
+      <ol class="reqs">
+        <li>Any number of readers may simultaneously read the file.</li>
+        <li>Only one writer at a time may write to the file.</li>
+        <li>If a writer is writing, no reader may read it.</li>
+      </ol>
+      <p>
+        This is the first problem in the course where mutual exclusion is <em>too strong</em>: applying it to
+        readers would serialise work that has no conflict. The semaphore solution counts readers, lets the
+        first one lock and the last one unlock, and the writer waits for the count to reach zero. Which is the
+        catch: in a busy system the count never reaches zero, the writer is correct and starved, and rule 4
+        above is broken by a solution that satisfies the other three <span class="tag inf">inferred</span>.
+      </p>
+
+      <p>
+        That is what makes the semaphore <b>strong</b> or <b>weak</b> <span class="tag src">s.26</span>. Give it a
+        queue and wake-ups happen in arrival order, so waiting is bounded. Remove the queue and a process can
+        be passed over indefinitely — which is exactly the difference between “the mechanism is correct” and
+        “the mechanism is fair”.
+      </p>
+
+      <h3 class="sub">The other half of the title: IPC without shared memory</h3>
+      <p>
+        Everything above assumes two execution streams can touch the same word. The deck closes with three
+        mechanisms that do not need that assumption — messages,
+        <b>signals</b> <span class="tag src">s.38–47</span>, and a shared-memory region mapped in by a system
+        call <span class="tag src">s.40–42</span>. Messages you have already met. A signal is the smallest
+        possible one: a single integer delivered to a process, and a handler that runs in its context.
+      </p>
+
+      <div class="tablewrap">
+        <table class="tbl">
+          <thead><tr><th>signal</th><th>number</th><th>when it arrives</th></tr></thead>
+          <tbody>
+            <tr><td>SIGHUP</td><td>1</td><td>the controlling terminal hung up, or the controlling process died</td></tr>
+            <tr><td>SIGINT</td><td>2</td><td>the user pressed Ctrl + C</td></tr>
+            <tr><td>SIGFPE</td><td>8</td><td>an illegal arithmetic operation was attempted</td></tr>
+            <tr><td>SIGKILL</td><td>9</td><td>unconditional termination — the process gets no chance to clean up</td></tr>
+            <tr><td>SIGTERM</td><td>15</td><td>software termination; what <code>kill</code> sends by default</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--mono);font-size:.64rem;color:var(--muted);margin-top:-.6rem;max-width:none">
+        <span class="tag src">source · s.43–45</span>
+      </p>
+
+      <p>
+        The shape is Ring 1 arriving in user space <span class="tag inf">inferred</span>: an asynchronous event
+        interrupts whatever the process was doing, control jumps to a handler of the form
+        <code>void name(int)</code>, and <code>signal(SIGINT, handler)</code> installs it
+        <span class="tag src">s.46–47</span>. <code>kill(pid, sig)</code> is the sender — a name that misleads,
+        since the signal is only a request and only some of them are fatal.
+      </p>
+
+      <p>
+        The hinge to the next ring is one sentence in the slides: for cooperation by communication,
+        “mutual exclusion is not a control requirement” — but “the problems of deadlock and starvation are
+        still present” <span class="tag src">s.13</span>. Mutual exclusion is only one of the four ways to
+        get stuck, and removing it removes none of the others.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 9 ================= -->
+  <section class="ring" id="ring9">
+    <div class="rail"><span class="n">09</span><span class="lbl">Deadlock</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 9 · the bill for mutual exclusion</p>
+      <h2>Deadlock: the state with no exit</h2>
+      <p class="intro">
+        Ring 8 bought safety with mutual exclusion and hold-and-wait. Ring 9 is the bill. Add two more
+        conditions and you get a set of processes where every exit depends on another member of the set.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            “The permanent blocking of a set of processes that either compete for system resources or
+            communicate with each other” — each blocked awaiting an event that only another blocked process
+            in the set can trigger, permanent because none is ever triggered.
+          </p>
+          <span class="tag src">source · deadlock s.4</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            The four conditions arrive together, and three were already built: mutual exclusion, hold-and-wait,
+            no-preemption, and finally a circular wait. Ring 4's Blocked state stops being something you
+            pass through.
+          </p>
+          <span class="tag src">source · s.10</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            Four families: prevention (break one condition), avoidance (banker's algorithm — never leave a
+            safe state), detection (search the resource graph), and recovery (abort, roll back to a
+            checkpoint, pre-empt).
+          </p>
+          <span class="tag src">source · s.15–32</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 11">
+        <svg viewBox="0 0 720 250" role="img" aria-label="Resource allocation graph: P1 holds R1 and requests R2; P2 holds R2 and requests R1. The two edges form a cycle, so both processes wait forever.">
+          <defs>
+            <marker id="dg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(168,65,30,.85)"/>
+            </marker>
+          </defs>
+
+          <circle cx="130" cy="70" r="30" fill="rgba(15,78,88,.07)" stroke="rgba(15,78,88,.55)" stroke-width="1.4"/>
+          <text class="s-lbl" x="130" y="75" text-anchor="middle" style="fill:#0F4E58">P1</text>
+
+          <circle cx="130" cy="190" r="30" fill="rgba(15,78,88,.07)" stroke="rgba(15,78,88,.55)" stroke-width="1.4"/>
+          <text class="s-lbl" x="130" y="195" text-anchor="middle" style="fill:#0F4E58">P2</text>
+
+          <rect x="500" y="46" width="104" height="48" rx="2" fill="#fff" stroke="rgba(25,23,18,.45)"/>
+          <text class="s-lbl" x="552" y="75" text-anchor="middle">R1</text>
+
+          <rect x="500" y="166" width="104" height="48" rx="2" fill="#fff" stroke="rgba(25,23,18,.45)"/>
+          <text class="s-lbl" x="552" y="195" text-anchor="middle">R2</text>
+
+          <path d="M500,70 H166" stroke="rgba(25,23,18,.4)" stroke-width="1.3" fill="none" marker-end="url(#dg)" style="stroke:rgba(168,65,30,.75)"/>
+          <text class="s-lbl-s" x="330" y="60" text-anchor="middle">held by P1</text>
+
+          <path d="M500,190 H166" stroke="rgba(25,23,18,.4)" stroke-width="1.3" fill="none" marker-end="url(#dg)" style="stroke:rgba(168,65,30,.75)"/>
+          <text class="s-lbl-s" x="330" y="210" text-anchor="middle">held by P2</text>
+
+          <path d="M158,86 C240,120 400,120 498,160" stroke="rgba(25,23,18,.45)" stroke-width="1.3" fill="none" stroke-dasharray="5 4" marker-end="url(#dg)"/>
+          <text class="s-lbl-s" x="330" y="128" text-anchor="middle" style="fill:#A8411E;paint-order:stroke;stroke:#FFFDF6;stroke-width:4px">P1 requests R2</text>
+
+          <path d="M158,174 C240,140 400,140 498,86" stroke="rgba(25,23,18,.45)" stroke-width="1.3" fill="none" stroke-dasharray="5 4" marker-end="url(#dg)"/>
+          <text class="s-lbl-s" x="330" y="158" text-anchor="middle" style="fill:#A8411E;paint-order:stroke;stroke:#FFFDF6;stroke-width:4px">P2 requests R1</text>
+
+          <text class="s-lbl-s" x="14" y="238" style="font-size:9.5px">A cycle in the graph is the deadlock: neither process can be granted the edge it is waiting on.</text>
+        </svg>
+        <figcaption><b>The graph that makes it obvious</b> <span class="tag src">s.12–13</span>. Solid edges are held resources, dashed edges are requests — and the two dashed edges close the loop.</figcaption>
+      </figure>
+
+      <p>
+        Two more examples sharpen the definition — one builds the cycle out of five forks and no code, the
+        other out of two blocked receives and no shared object at all.
+      </p>
+
+      <figure class="fig" data-fig="FIG. 12">
+        <svg viewBox="0 0 760 352" role="img" aria-label="Left: five philosophers around a table with five forks between them, and a clockwise ring of arrows showing each philosopher waiting for the next one's fork. Right: two processes each blocked in a receive from the other, which deadlocks with no shared resource at all.">
+          <defs>
+            <marker id="cyc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(168,65,30,.8)"/>
+            </marker>
+            <marker id="dg2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(25,23,18,.55)"/>
+            </marker>
+          </defs>
+
+          <text class="s-lbl-s" x="14" y="22" style="letter-spacing:.14em">REUSABLE RESOURCES · FIVE PHILOSOPHERS</text>
+
+          <g fill="none" stroke="rgba(168,65,30,.55)" stroke-width="1.2" stroke-dasharray="4 4">
+            <path d="M239.6,53.3 A128,128 0 0 1 303.6,99.7" marker-end="url(#cyc)"/>
+            <path d="M328,175 A128,128 0 0 1 303.6,250.3" marker-end="url(#cyc)"/>
+            <path d="M239.6,296.7 A128,128 0 0 1 160.4,296.7" marker-end="url(#cyc)"/>
+            <path d="M96.4,250.3 A128,128 0 0 1 72,175" marker-end="url(#cyc)"/>
+            <path d="M96.4,99.7 A128,128 0 0 1 160.4,53.3" marker-end="url(#cyc)"/>
+          </g>
+
+          <g>
+            <circle cx="200" cy="75" r="20" fill="#fff" stroke="rgba(15,78,88,.6)" stroke-width="1.3"/>
+            <circle cx="295.1" cy="144.1" r="20" fill="#fff" stroke="rgba(15,78,88,.6)" stroke-width="1.3"/>
+            <circle cx="258.8" cy="255.9" r="20" fill="#fff" stroke="rgba(15,78,88,.6)" stroke-width="1.3"/>
+            <circle cx="141.2" cy="255.9" r="20" fill="#fff" stroke="rgba(15,78,88,.6)" stroke-width="1.3"/>
+            <circle cx="104.9" cy="144.1" r="20" fill="#fff" stroke="rgba(15,78,88,.6)" stroke-width="1.3"/>
+          </g>
+          <g class="s-lbl" text-anchor="middle" style="fill:#0F4E58;font-size:10.5px">
+            <text x="200" y="79">P0</text><text x="295.1" y="148">P1</text><text x="258.8" y="260">P2</text>
+            <text x="141.2" y="260">P3</text><text x="104.9" y="148">P4</text>
+          </g>
+
+          <g>
+            <rect x="251.8" y="87.1" width="14" height="14" fill="rgba(168,65,30,.14)" stroke="rgba(168,65,30,.7)"/>
+            <rect x="288.1" y="198.9" width="14" height="14" fill="rgba(168,65,30,.14)" stroke="rgba(168,65,30,.7)"/>
+            <rect x="193" y="268" width="14" height="14" fill="rgba(168,65,30,.14)" stroke="rgba(168,65,30,.7)"/>
+            <rect x="97.9" y="198.9" width="14" height="14" fill="rgba(168,65,30,.14)" stroke="rgba(168,65,30,.7)"/>
+            <rect x="134.2" y="87.1" width="14" height="14" fill="rgba(168,65,30,.14)" stroke="rgba(168,65,30,.7)"/>
+          </g>
+
+          <text class="s-lbl-s" x="14" y="334" style="font-size:9.2px">Each holds one fork and waits for the neighbour's — every fork is taken, so no one eats.</text>
+
+          <line x1="400" y1="40" x2="400" y2="320" stroke="rgba(25,23,18,.18)" stroke-dasharray="3 4"/>
+
+          <text class="s-lbl-s" x="430" y="22" style="letter-spacing:.14em">CONSUMABLE RESOURCES · MESSAGES</text>
+
+          <text class="s-lbl-s" x="588" y="80" text-anchor="middle" style="font-size:8.6px">each blocks in receive() before it ever sends</text>
+
+          <rect x="432" y="92" width="118" height="52" rx="2" class="s-box"/>
+          <text class="s-lbl" x="491" y="114" text-anchor="middle">P1</text>
+          <text class="s-lbl-s" x="491" y="130" text-anchor="middle" style="font-size:8.4px">waiting for P2</text>
+
+          <rect x="626" y="92" width="118" height="52" rx="2" class="s-box"/>
+          <text class="s-lbl" x="685" y="114" text-anchor="middle">P2</text>
+          <text class="s-lbl-s" x="685" y="130" text-anchor="middle" style="font-size:8.4px">waiting for P1</text>
+
+          <path class="s-arrow" d="M622,106 H560" marker-end="url(#dg2)" stroke-dasharray="4 4"/>
+          <path class="s-arrow" d="M554,132 H618" marker-end="url(#dg2)" stroke-dasharray="4 4"/>
+
+          <text class="s-lbl-s" x="588" y="172" text-anchor="middle" style="font-size:8.6px">neither reaches the send() that would answer</text>
+
+          <text class="s-lbl-s" x="430" y="208" style="font-size:9.2px;fill:#A8411E">No lock, no buffer, no shared word to blame —</text>
+          <text class="s-lbl-s" x="430" y="222" style="font-size:9.2px;fill:#A8411E">the cycle here is made of blocking alone.</text>
+          <text class="s-lbl-s" x="430" y="252" style="font-size:9.2px">Definition: “compete for system resources</text>
+          <text class="s-lbl-s" x="430" y="266" style="font-size:9.2px">or communicate with each other”.</text>
+        </svg>
+        <figcaption>
+          <b>Two shapes of the same cycle.</b> The dining philosophers are the reusable case — mutual exclusion
+          plus “no philosopher must starve” <span class="tag src">deadlock s.35</span>, with the left-then-right
+          pick-up shown as the figure's classic protocol <span class="tag ext">external</span>. The message
+          pair is the consumable case, and it is the deck's own example <span class="tag src">s.9</span>: two
+          processes each waiting to receive from the other, so nothing is ever sent.
+        </figcaption>
+      </figure>
+
+      <p>
+        The philosophers also show why the cure is a rule rather than a mechanism. Make one of them take the
+        right fork first and the circular wait cannot close — which is prevention by resource ordering, drawn
+        as a dinner table. The message pair shows the opposite lesson: remove every shared object and the
+        cycle survives, because blocking is a resource too.
+      </p>
+
+      <div class="tablewrap">
+        <table class="tbl">
+          <thead><tr><th>condition</th><th>how prevention attacks it</th></tr></thead>
+          <tbody>
+            <tr><td>Mutual exclusion</td><td>allow shared reads where the device permits it; for genuinely exclusive resources it cannot be removed, only lived with</td></tr>
+            <tr><td>Hold and wait</td><td>require a process to request everything it needs at once, and block until all of it can be granted</td></tr>
+            <tr><td>No preemption</td><td>if a further request is denied, make the holder release what it has and start again — or pre-empt the other process</td></tr>
+            <tr><td>Circular wait</td><td>define a linear ordering of resource types and acquire only in that order</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--mono);font-size:.64rem;color:var(--muted);margin-top:-.6rem;max-width:none">
+        <span class="tag src">source · s.15–17</span>
+      </p>
+
+      <p>
+        Avoidance is the subtle one, because it grants a request that is free and still refuses it. A state is
+        <b>safe</b> when there is at least one order in which every process can finish with what is currently
+        available <span class="tag src">s.20</span>; the banker's algorithm grants a request only if the result
+        is still safe <span class="tag src">s.23–27</span>. That is why it needs the future: the answer depends
+        on requests nobody has made yet. The deck credits it with avoiding pre-emption and rollback and with
+        being less restrictive than prevention <span class="tag src">s.28</span>, and the price is exactly the
+        information it consumes — processes must declare their maximum needs in advance
+        <span class="tag inf">inferred</span>.
+      </p>
+
+      <p>
+        The deck is blunt about the limits: “no efficient solution in the general case” <span class="tag src">s.4</span>.
+        Avoidance needs the future (“requires knowledge of future process requests”) <span class="tag src">s.18</span>,
+        detection needs to be run at some chosen frequency, and recovery is always ugly — abort everything,
+        or unwind to checkpoints <span class="tag src">s.31–32</span>. The practical answer is the integrated
+        strategy: group resources into classes and use a different technique inside each
+        <span class="tag src">s.33–34</span>.
+      </p>
+
+      <p>
+        The deck's last three slides are the reality check, and none of them is a new ring — each is a Ring 8
+        mechanism with an engineering trade baked in. Linux protects most critical sections with a
+        <b>spinlock</b>: a thread loops on a word in memory until it acquires it, which is cheaper than sleeping
+        only while the expected wait is short, and pure waste when it is not
+        <span class="tag src">s.37</span>. Windows exposes synchronisation as part of its object architecture,
+        so a thread waits on an object rather than on a loose variable <span class="tag src">s.38</span>
+        <span class="tag ext">the object types are a figure</span>. Android adds
+        <b>Binder</b> to the kernel — a lightweight RPC over <code>ioctl</code> that mediates every interaction
+        between two processes <span class="tag src">s.40–41</span>. Three different answers, one question: who
+        pays for the wait, the spinner or the sleeper.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= RING 10 ================= -->
+  <section class="ring" id="ring10">
+    <div class="rail"><span class="n">10</span><span class="lbl">Many CPUs</span></div>
+    <div class="sec-body">
+      <p class="kicker">Ring 10 · the assumption breaks</p>
+      <h2>Many processors: simultaneous means simultaneous</h2>
+      <p class="intro">
+        Every ring so far quietly assumed one instruction stream at a time. Two CPUs make that false, and
+        take a dozen convenient assumptions with it — starting with the way the last three rings kept order.
+      </p>
+
+      <div class="triad">
+        <div class="t-concept">
+          <h3>The concept</h3>
+          <p>
+            “An interconnection of two or more CPUs with memory and input-output equipment.” Shared-memory
+            multiprocessors (UMA, NUMA), message-passing multicomputers, wide-area distributed systems — and
+            three OS structures: one OS per CPU, leader–follower, or SMP.
+          </p>
+          <span class="tag src">source · multiprocessors s.4, s.11, s.17–19</span>
+        </div>
+        <div class="t-bottle">
+          <h3>The bottleneck</h3>
+          <p>
+            Interleaving becomes overlapping. Disabling interrupts — the uniprocessor answer to mutual
+            exclusion — “will not work in a multiprocessor architecture”. Memory becomes the contested
+            resource: bus contention, crossbar switches, remote memory slower than local.
+          </p>
+          <span class="tag src">source · sync s.17, multiprocessors s.12–16</span>
+        </div>
+        <div class="t-break">
+          <h3>The breakthrough</h3>
+          <p>
+            SMP: one OS image, every CPU equal, any thread on any CPU — which is only usable because Ring 6
+            made threads schedulable objects. Granularity then decides what is worth parallelising.
+          </p>
+          <span class="tag src">source · s.7–10, s.19</span>
+        </div>
+      </div>
+
+      <figure class="fig" data-fig="FIG. 13">
+        <div class="spectrum">
+          <div class="spectrum-axis"></div>
+          <div class="spectrum-labels"><span>shared memory</span><span>message passing</span></div>
+          <div class="spectrum-track">
+            <div class="stop">
+              <span class="k">same latency everywhere</span>
+              <h4>UMA</h4>
+              <p>One address space, one bus or crossbar. Every CPU pays the same price for every word — until
+                the bus saturates.</p>
+            </div>
+            <div class="stop">
+              <span class="k">local is cheaper</span>
+              <h4>NUMA</h4>
+              <p>Still one address space and plain <code>LOAD</code>/<code>STORE</code>, but remote memory is
+                slower. Placement becomes a performance decision.</p>
+            </div>
+            <div class="stop">
+              <span class="k">no shared memory</span>
+              <h4>Multicomputer</h4>
+              <p>Nodes talk by messages. The send/receive pair from Ring 8 is now the only way to cooperate.</p>
+            </div>
+            <div class="stop">
+              <span class="k">no shared anything</span>
+              <h4>Distributed</h4>
+              <p>Each node has private memory and its own OS; middleware manufactures the uniformity.</p>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <b>The hardware spectrum</b> <span class="tag src">multiprocessors s.11–21</span>. Moving right, the
+          rings to its left stop being about protecting shared words and start being about sending messages
+          — but deadlock and starvation travel with you <span class="tag src">sync s.13</span>.
+        </figcaption>
+      </figure>
+
+      <p>
+        The spectrum hides three hardware answers to the same contention, and they are a cost curve rather
+        than a list <span class="tag src">s.12–16</span>. A <b>bus</b> gives every CPU the same path to memory
+        for the price of one shared wire — until every CPU misses cache at once and the bus becomes the
+        bottleneck. A <b>crossbar</b> gives every CPU–memory pair its own switch, so paths never contend; the
+        price grows as the square of the CPU count. A <b>multistage switching network</b> routes messages
+        through stages of 2×2 switches — a middle point where paths sometimes block instead of always
+        contending. NUMA then adds a <b>directory</b>: each node records who holds a copy of each block, so a
+        remote read is a message to the owner rather than a broadcast to everyone.
+      </p>
+
+      <p>
+        Three OS structures sit on that hardware, and the trade is always the same — who is allowed to touch
+        kernel data <span class="tag src">s.17–19</span>. <em>One OS per CPU</em> partitions memory and shares a
+        single copy of the code, with private data per CPU: no locks at all, but a busy CPU cannot borrow an
+        idle one's work and a process cannot migrate. <em>Leader–follower</em> keeps all kernel work on the
+        leader and lets followers run only user code: kernel data needs no locks, but every system call
+        funnels through one CPU, which is now the bottleneck. <em>SMP</em> puts one OS image on every CPU and
+        lets any thread run anywhere: no wasted cores, and the bill is every lock from Ring 8 plus cache
+        coherence <span class="tag inf">inferred</span>. What is bought with all of it is throughput that a
+        single CPU cannot reach, and a machine that survives one CPU failing
+        <span class="tag inf">inferred</span>.
+      </p>
+
+      <p>
+        Granularity is the deck's way of asking “what is worth running in parallel?” <span class="tag src">s.7–10</span>:
+        independent work needs nothing new, coarse-grained work behaves like concurrent processes on a
+        uniprocessor, medium-grained work is <em>threads inside one process</em> — and because those threads
+        interact constantly, “scheduling decisions concerning one thread may affect the performance of the
+        entire application” <span class="tag src">s.9</span>. Fine-grained parallelism, the deck says plainly,
+        is “a specialized and fragmented area” <span class="tag src">s.10</span>.
+      </p>
+
+      <p>
+        That sentence closes a loop worth noticing: the scheduling policy from Ring 7, applied to the threads
+        from Ring 6, on the hardware from this ring, determines whether adding a core helps at all.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= BEYOND ================= -->
+  <section class="ring" id="beyond">
+    <div class="rail"><span class="n">11</span><span class="lbl">Beyond</span></div>
+    <div class="sec-body">
+      <p class="kicker">Beyond the last ring</p>
+      <h2>The question the course ends on</h2>
+      <p class="intro">
+        The multiprocessor deck does not close with a definition. It closes with a discussion — and it is
+        the right question to answer in the language of the rings.
+      </p>
+
+      <blockquote class="pull">
+        Multicore CPUs are common… desktops with tens or hundreds of cores are not far off. One possible way
+        to harness this power is to parallelize standard desktop applications such as the word processor or
+        the Web browser. Another is to parallelize the services offered by the operating system. Which
+        approach appears the most promising? Why?
+        <span>multiprocessors · s.22, verbatim</span>
+      </blockquote>
+
+      <p>
+        <span class="tag inf">inferred</span> &nbsp;The operating system's own services, first — and three
+        reasons that come straight out of the rings. The OS is the only component that is concurrent by
+        construction: it already schedules, multiplexes I/O and manages the cache hierarchy, so there is no
+        new decomposition problem to solve. A parallel TCP path or a parallel crypto library is won once and
+        collected by every application, with no programmer asked to think about threads. And most desktop
+        code is I/O-bound rather than compute-bound, so handing it a hundred cores gives it very little to
+        do — precisely the burst pattern Ring 7 was built around
+        <span class="tag src">sched s.4</span>.
+      </p>
+
+      <p>
+        The application route holds the deeper gain and the harder problem: someone has to find the
+        parallelism, and then survive Rings 8 and 9 while using it. So the honest answer is both, in that
+        order — infrastructure first because it is shared, applications second because that is where the
+        general-purpose work actually lives.
+      </p>
+
+      <p>
+        Past that, the machine stops being one machine. A distributed system gives every node private memory
+        with “no shared physical memory in the system”, and the only way to make the collection look uniform
+        is a layer above the operating system: middleware
+        <span class="tag src">multiprocessors s.20–21</span>. The send/receive pair from Ring 8 becomes the
+        whole interface, and Rings 7 and 9 do not disappear — they become harder, because latency is now
+        unbounded.
+      </p>
+
+      <div class="note">
+        <span class="nh">The whole course in one sentence</span>
+        <p>
+          One foundation (the loop), one escape hatch (the interrupt), one abstraction that makes sharing
+          possible (the process), one state model that makes it schedulable, one interface that makes it
+          legal, one lighter unit that makes it cheap (threads), one policy that makes it fair (scheduling),
+          one discipline that makes it correct (synchronisation), one failure mode that makes it permanent
+          (deadlock), and one hardware change that makes all of it simultaneous (multicore).
+        </p>
+      </div>
+
+      <p style="font-family:var(--mono);font-size:.64rem;color:var(--muted);line-height:1.8;max-width:none">
+        A note on ordering: the course numbers these decks sessions 3, 4, 5, 6, 7 in a different sequence
+        from the rings above. The ring order is the lineage, not the timetable — multicore sits last because
+        it is the ring that invalidates the single-CPU assumption every earlier ring rests on.
+        <span class="tag inf">inferred</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= PRACTICE ================= -->
+  <section class="ring" id="drill">
+    <div class="rail"><span class="n">?</span><span class="lbl">Check</span></div>
+    <div class="sec-body">
+      <p class="kicker">Eleven questions the examiner can ask</p>
+      <h2>Say it back in the rings' language</h2>
+      <p class="intro">Open each one only after answering it aloud. The answers are one line each, by design.</p>
+
+      <div class="drill">
+        <details>
+          <summary>Why can't a two-state process model schedule correctly?</summary>
+          <div class="ans">
+            <p>Because “not running” hides two incompatible situations: a process that <em>wants</em> the CPU
+              (Ready) and one that <em>cannot use</em> it until an event arrives (Blocked). Merging them means
+              the dispatcher can pick a process that will immediately stall, which reintroduces the idle CPU
+              that multiprogramming existed to eliminate.</p>
+            <p><span class="tag inf">inferred from deck 2 s.13–14</span></p>
+          </div>
+        </details>
+        <details>
+          <summary>An interrupt arrives while another is being handled. What are the two approaches?</summary>
+          <div class="ans">
+            <p>Disable interrupts while the first is processed, or use a priority scheme so a higher-priority
+              interrupt can pre-empt the handler <span class="tag src">deck 1 s.14</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>What does fork() actually copy, and what does the return value tell you?</summary>
+          <div class="ans">
+            <p>It makes two identical copies of the address space, and both processes continue from the same
+              point <span class="tag src">deck 2 s.32</span>. The return value is the only way to tell them
+              apart: 0 in the child, the child's PID in the parent, −1 on failure.</p>
+          </div>
+        </details>
+        <details>
+          <summary>If swapping is disk I/O, why does it usually improve performance?</summary>
+          <div class="ans">
+            <p>Because the alternative is a CPU with no Ready process to run. Disk I/O is generally the fastest
+              I/O on the system, so paying it beats idling — though the slides are careful to note the risk of
+              making things worse <span class="tag src">deck 2 s.15</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Which PCB fields make a context switch possible, and which make it safe?</summary>
+          <div class="ans">
+            <p>Possible: the saved register image, program counter, stack pointer and state — without them
+              there is nothing to resume. Safe: memory limits and pointers, file descriptors, and IDs — they
+              define what the process may touch, and they are why only the kernel may write a PCB
+              <span class="tag src">deck 2 s.23–25</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A user-level thread calls read() and blocks. What happens to its siblings — and why?</summary>
+          <div class="ans">
+            <p>They all block. The kernel only knows about the process, so it has no other thread to run:
+              “not only is that thread blocked, but all of the threads within the process are blocked as
+              well” <span class="tag src">threads s.14</span>. Kernel-level threads avoid this, and pay for
+              it with a mode switch on every switch.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Bursts 24, 3, 3 arrive together. Give FCFS and SJF average waiting time, and name SJF's price.</summary>
+          <div class="ans">
+            <p>FCFS: 0, 24, 27 → average 17. SJF: 0, 3, 6 → average 3
+              <span class="tag src">sched s.20</span> <span class="tag inf">computed</span>. The price: SJF needs
+              the service time in advance, and a stream of short arrivals starves a long job until HRRN's
+              ageing or a feedback queue rescues it.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Why must the producer wait on <code>empty</code> before it waits on <code>mutex</code>?</summary>
+          <div class="ans">
+            <p>Because a blocked process keeps what it holds. Take the lock first and a full buffer parks the
+              producer <em>inside</em> the critical section; the consumer, the only process that could free a
+              slot, can never get in. The order of the waits encodes the rule: never block while holding a
+              lock <span class="tag inf">inferred</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Name the four conditions for deadlock and one prevention for each.</summary>
+          <div class="ans">
+            <p>Mutual exclusion (share reads where the device allows it), hold-and-wait (request everything at
+              once), no-preemption (release on denial, or pre-empt the holder), circular wait (impose a linear
+              order on resource types) <span class="tag src">deadlock s.10, s.16–17</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Five philosophers, five forks. Which condition do you break, and how?</summary>
+          <div class="ans">
+            <p>Circular wait. Make one philosopher take the right fork first, or number the forks and require
+              ascending order, or admit only four to the table. Each prevents the cycle without touching
+              mutual exclusion or hold-and-wait <span class="tag inf">inferred from deadlock s.15–17, s.35</span>.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Why can't mutual exclusion be had by disabling interrupts on a multicore machine?</summary>
+          <div class="ans">
+            <p>Because that only stops the CPU you are on. A second CPU keeps executing and can walk into the
+              same critical section — the deck says it outright: this approach “will not work in a
+              multiprocessor architecture” <span class="tag src">sync s.17</span>. That is what the atomic
+              instructions (compare&amp;swap, TSL) are for.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Sources.</b> Rasjid, Z. E. — COMP6697001 Operating Systems, seven decks: s1 <em>Introduction to
+      Operating Systems</em> (43 slides), s2 <em>Processes</em> (39), s3 <em>Threads</em> (43), s4 <em>Multiple
+      Processor Systems</em> (23), s5 <em>Process Scheduling</em> (33), s6 <em>Synchronization and Inter-process
+      Communication</em> (48), s7 <em>Deadlock</em> (43) — 272 slides. Adapted from Tanenbaum &amp; Bos,
+      <em>Modern Operating Systems</em> 5e (ch. 1–8) and Stallings, <em>Operating Systems: Internals and Design
+      Principles</em> 9e (ch. 1–13).</p>
+    <p><b>Method.</b> Iris Method: every concept sits on a ring, and each ring exists to remove a specific
+      bottleneck of the ring inside it. Claims marked <span class="tag src">source</span> are stated in the
+      decks; <span class="tag inf">inferred</span> are deductions I made from them, not quotations;
+      <span class="tag ext">external</span> fills gaps where a slide shows a figure without its text.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- sticky nav: active ring ---------- */
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.ringnav a'));
+  var sections = navLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  var drill = document.getElementById('drill');
+  var navWrap = document.querySelector('.ringnav .wrap');
+  var lastIdx = -2;
+
+  function updateNav() {
+    var probe = window.scrollY + 140;
+    var idx = -1;
+    sections.forEach(function (s, i) {
+      if (s && s.getBoundingClientRect().top + window.scrollY <= probe) idx = i;
+    });
+    if (drill && drill.getBoundingClientRect().top + window.scrollY <= probe) idx = -1;
+    navLinks.forEach(function (a, i) {
+      a.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    });
+    if (idx !== lastIdx) {
+      lastIdx = idx;
+      if (idx >= 0 && navWrap) {
+        var el = navLinks[idx];
+        var left = el.offsetLeft - (navWrap.clientWidth - el.offsetWidth) / 2;
+        navWrap.scrollTo({ left: Math.max(0, left) });
+      }
+    }
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  window.addEventListener('resize', updateNav, { passive: true });
+  updateNav();
+
+  /* ---------- iris plate: band <-> legend sync ---------- */
+  var map = document.querySelector('.map');
+  var bands = Array.prototype.slice.call(document.querySelectorAll('#bands .band'));
+  var legendItems = Array.prototype.slice.call(document.querySelectorAll('#legend li'));
+
+  function selectRing(n) {
+    if (n === null || n === undefined) {
+      map.classList.remove('has-sel');
+      bands.forEach(function (b) { b.classList.remove('sel'); });
+      legendItems.forEach(function (li) { li.classList.remove('on'); });
+      return;
+    }
+    map.classList.add('has-sel');
+    bands.forEach(function (b) { b.classList.toggle('sel', b.dataset.ring === String(n)); });
+    legendItems.forEach(function (li) { li.classList.toggle('on', li.dataset.ring === String(n)); });
+  }
+
+  bands.forEach(function (b) {
+    b.addEventListener('mouseenter', function () { selectRing(b.dataset.ring); });
+    b.addEventListener('focus', function () { selectRing(b.dataset.ring); });
+  });
+  legendItems.forEach(function (li) {
+    var btn = li.querySelector('button');
+    li.addEventListener('mouseenter', function () { selectRing(li.dataset.ring); });
+    btn.addEventListener('focus', function () { selectRing(li.dataset.ring); });
+    btn.addEventListener('click', function () {
+      var target = document.querySelector('#ring' + li.dataset.ring);
+      if (li.dataset.ring === '11') target = document.querySelector('#beyond');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  var mapWrap = document.querySelector('.map .map-grid');
+  if (mapWrap) {
+    mapWrap.addEventListener('mouseleave', function () { selectRing(null); });
+    mapWrap.addEventListener('focusout', function (ev) {
+      if (!mapWrap.contains(ev.relatedTarget)) selectRing(null);
+    });
+  }
+
+  /* ---------- context switch demo ---------- */
+  var demo = document.getElementById('switchdemo');
+  if (demo) {
+    var regs = {
+      A: { PC: '0x00A4', R1: '7', R2: '3' },
+      B: { PC: '0x1F20', R1: '12', R2: '0' }
+    };
+    var running = 'A';
+    var cpuEl = demo.querySelector('[data-cpu]');
+    var btnSwitch = document.getElementById('switchBtn');
+
+    function fmt(r) { return 'PC = ' + r.PC + ' · R1 = ' + r.R1 + ' · R2 = ' + r.R2; }
+
+    function render(justSwitched) {
+      cpuEl.textContent = fmt(regs[running]);
+      ['A', 'B'].forEach(function (id) {
+        var card = demo.querySelector('[data-p="' + id + '"]');
+        var live = card.querySelector('[data-live]');
+        var saved = card.querySelector('[data-saved]');
+        var status = card.querySelector('[data-status]');
+        var isRun = id === running;
+        card.classList.toggle('run', isRun);
+        status.textContent = isRun ? 'running' : 'ready';
+        live.textContent = fmt(regs[id]);
+        saved.textContent = isRun
+          ? 'PCB ' + id + ' · live copy currently in the CPU'
+          : 'PCB ' + id + ' · parked until dispatch';
+        if (justSwitched) {
+          card.classList.remove('flash');
+          void card.offsetWidth;
+          card.classList.add('flash');
+        }
+      });
+    }
+
+    render(false);
+    btnSwitch.addEventListener('click', function () {
+      running = running === 'A' ? 'B' : 'A';
+      render(true);
+    });
+  }
+
+  /* ---------- state machine ---------- */
+  var fsm = document.getElementById('fsm');
+  if (fsm) {
+    var info = {
+      new: { title: 'New', note: 'just created, not yet admitted', out: [['Ready', 'admit — the OS accepts it into the ready pool', 'ready']] },
+      ready: { title: 'Ready', note: 'able and willing to run', out: [['Running', 'dispatch — the scheduler picks it', 'running'], ['Ready/Suspend', 'suspend — an agent removes it from memory', 'rsusp']] },
+      running: { title: 'Running', note: 'on the CPU right now', out: [['Ready', 'timeout — quantum expires, or it is pre-empted', 'ready'], ['Blocked', 'event wait — asks for I/O or a resource it cannot have', 'blocked'], ['Exit', 'release — normal exit or error exit', 'exit']] },
+      blocked: { title: 'Blocked', note: 'cannot proceed until an event arrives', out: [['Ready', 'event occurs — the disk answered', 'ready'], ['Blocked/Suspend', 'swap out — memory is needed elsewhere', 'bsusp']] },
+      exit: { title: 'Exit', note: 'terminal state — resources reclaimed', out: [] },
+    };
+
+    var nodes = Array.prototype.slice.call(fsm.querySelectorAll('.node'));
+    var edges = Array.prototype.slice.call(fsm.querySelectorAll('.edge'));
+    var titleEl = document.getElementById('fsm-title');
+    var bodyEl = document.getElementById('fsm-body');
+    var stEl = fsm.querySelector('.st');
+
+    function show(state) {
+      var d = info[state];
+      if (!d) return;
+      stEl.textContent = d.note;
+      titleEl.textContent = d.title;
+      bodyEl.innerHTML = '';
+      if (!d.out.length) {
+        var li = document.createElement('li');
+        li.innerHTML = '<b>no outgoing transitions</b><span>the process has ended</span>';
+        bodyEl.appendChild(li);
+      }
+      d.out.forEach(function (t) {
+        var li = document.createElement('li');
+        li.innerHTML = '<b>→ ' + t[0] + '</b><span>' + t[1] + '</span>';
+        bodyEl.appendChild(li);
+      });
+      nodes.forEach(function (n) { n.classList.toggle('sel', n.dataset.state === state); });
+      edges.forEach(function (e) {
+        var lit = e.dataset.from === state;
+        e.classList.toggle('lit', lit);
+        var lbl = fsm.querySelector('.elbl[data-e="' + state + '"]');
+        if (lbl) lbl.classList.toggle('lit', lit);
+      });
+    }
+
+    nodes.forEach(function (n) {
+      n.addEventListener('click', function () { show(n.dataset.state); });
+      n.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); show(n.dataset.state); }
+      });
+    });
+    show('new');
+
+  }
+
+  /* ---------- gentle reveal ---------- */
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && 'IntersectionObserver' in window) {
+    var figs = document.querySelectorAll('figure.fig');
+    figs.forEach(function (f) { f.style.opacity = '0'; f.style.transform = 'translateY(8px)'; f.style.transition = 'opacity .38s ease, transform .38s ease'; });
+    var figObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'none';
+          figObs.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    figs.forEach(function (f) { figObs.observe(f); });
+  }
+})();
+</script>
+</body>
+</html>
