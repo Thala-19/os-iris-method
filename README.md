@@ -1,31 +1,38 @@
-# The Iris Method — Operating Systems, Ring by Ring
+# One Prompt, Eleven Rings
 
-A single self-contained page that reconstructs **COMP6697001 Operating Systems** (seven lecture decks, 272 slides)
-as one continuous argument: every concept exists to remove a specific limitation of the concept inside it.
+A single self-contained page that turns **COMP6697001 Operating Systems** (seven decks, 272 slides) into
+one continuous story. You type a line into an agentic AI; each ring is another layer of the machine that
+has to answer before you see a reply.
 
 **Live:** https://thala-19.github.io/os-iris-method/
 
 No build step, no dependencies, no network calls — open `index.html` and it works.
 
-## What the page does
+## The one example
 
-The course is laid out as concentric rings. Ring 0 is the bare instruction cycle; each ring outward is an
-invention that fixed something the previous ring could not do.
+> "Find the TODO in this repo, fix one, and commit it."
 
-| Ring | Topic | The limit it removed |
+Every ring asks the same two questions about that prompt: **what is the machine doing at this layer**, and
+**what would break without it**. The jargon stays — process, PCB, fork, pre-emption, semaphore, deadlock —
+but each term is defined where it first appears, in plain words.
+
+Ring 0 is the bare instruction cycle. Each ring outward removed a limit of the ring inside it, which is why
+the course is one argument rather than seven topics.
+
+| Ring | Topic | What it does for the prompt |
 | --- | --- | --- |
-| 0 | The instruction cycle | — (the foundation) |
-| 1 | Interrupts and the resident monitor | a program the machine could not take back |
-| 2 | Multiprogramming | a CPU idle during every I/O wait |
-| 3 | **The process** (hinge ring) | nothing was resumable or accountable |
-| 4 | Lifecycle and the five-state model | "not running" hid two different problems |
-| 5 | System calls and modes | user code could not ask for any of it |
-| 6 | Threads | a whole address space per unit of work |
-| 7 | Scheduling | a ready queue with no policy |
-| 8 | Synchronisation and IPC | concurrent reads and writes race |
-| 9 | Deadlock | blocking that can never end |
-| 10 | Multiprocessor systems | "one instruction stream at a time" was assumed |
-| 11 | Beyond | distributed systems, middleware, the open question |
+| 0 | The instruction cycle | turns your text into instructions, one at a time |
+| 1 | Interrupts and the resident monitor | lets a timer take the CPU back from the agent |
+| 2 | Multiprogramming | runs something else while the agent waits on the network |
+| 3 | **The process** (hinge ring) | saves the half-written answer so it can be resumed |
+| 4 | Lifecycle and the five-state model | tells "waiting for a reply" apart from "waiting for a turn" |
+| 5 | System calls and modes | lets the agent read a file without owning the disk |
+| 6 | Threads | runs the stream, the stop button and three tools together |
+| 7 | Scheduling | shares the CPU fairly when eight agents are ready |
+| 8 | Synchronisation and IPC | makes the transcript one write at a time |
+| 9 | Deadlock | (this ring is the bill for ring 8) a spinner that never settles |
+| 10 | Multiprocessor systems | runs three tools genuinely at the same instant |
+| 11 | Beyond | reaches a tool on someone else's machine |
 
 ## What is on the page
 
@@ -34,6 +41,7 @@ invention that fixed something the previous ring could not do.
 - A working **context-switch demo**: two PCBs, one CPU, registers saved and restored.
 - Figures for the CPU-utilisation argument, the fork/exec tree, thread sharing, the ULT/KLT quantum timeline,
   a semaphore race table, a resource-allocation graph, dining philosophers, the multicore hardware spectrum.
+- A closing table that runs the one prompt end to end, ring by ring.
 - Eleven exam-style questions with one-line answers.
 
 ## How claims are tagged
