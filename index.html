@@ -575,19 +575,19 @@
       <h1>You press Enter.<br><em>Eleven rings answer.</em></h1>
 
       <p class="lede">
-        You type <strong>“fix the failing test”</strong> into an agentic AI and wait. In those few seconds a
-        program is interrupted, paused, resumed, scheduled, refused permission, granted it, made to wait for a
-        lock, and sometimes made to wait forever. None of that is new. It is the seven decks, in order: each
-        ring is the fix for something the ring inside it could not do.
+        You type <strong>“fix the failing test”</strong> into an agentic AI and wait. In those few seconds
+        something is stopped, saved, restarted, put in a queue, refused permission, given it, made to wait
+        for a lock, and sometimes made to wait forever. None of that is new. It is your whole course, in
+        order. Each ring fixes one thing the ring inside it could not do.
       </p>
 
       <div class="beat">
         <span class="bh">The example, used all the way through</span>
         <p>
-          One line, typed once: <b>“Find the TODO in this repo, fix one, and commit it.”</b> The agent now has
-          to read files, call a server, run a command, write a file and answer you. Each of those is a
-          different layer of the machine, and each layer is one ring. The jargon stays — every term is
-          defined where it first appears.
+          One line, typed once: <b>“Find the TODO in this repo, fix one, and commit it.”</b> To answer it, the
+          agent has to read files, talk to a server, run a command, write a file, and reply to you. Each of
+          those is a different level of the machine, and each level is one ring. The technical words are all
+          kept, but each one is explained the first time it appears.
         </p>
       </div>
 
@@ -603,13 +603,13 @@
       <h2>How to read the tags</h2>
       <dl>
         <dt><span class="tag src">source</span></dt>
-        <dd>Stated in the slides or the textbook chapters they cite. Slide numbers given.</dd>
+        <dd>The lecture slides said it, and the slide number is given.</dd>
         <dt><span class="tag inf">inferred</span></dt>
-        <dd>Not written down, but the only conclusion the material supports. My deduction, marked.</dd>
+        <dd>The slides did not say it, but it follows from what they did say. My reasoning, marked.</dd>
         <dt><span class="tag ext">external</span></dt>
-        <dd>Fills a hole the decks leave open, because some slides are pictures rather than text. My outside knowledge, labelled.</dd>
+        <dd>Fills a gap, usually where a slide was a picture with no text. My own knowledge, labelled.</dd>
       </dl>
-      <p>Every ring opens with the same two questions: what your prompt is doing at that layer, and what would break without it.</p>
+      <p>Every ring asks the same two questions: what your prompt is doing at that level, and what would go wrong without it.</p>
     </div>
   </div>
 </header>
@@ -724,56 +724,55 @@
       <p class="kicker">Ring 0 · the oldest thing in the story</p>
       <h2>A machine that executes, and nothing else</h2>
       <p class="intro">
-        Under everything else there is a loop. Fetch an instruction from memory, work out what it says, do
-        it, move to the next one. That is all the hardware does. Everything after this ring exists because
-        that loop is so limited.
+        At the bottom of everything there is one small loop. The CPU reads an instruction from memory, works
+        out what it means, carries it out, then reads the next one. That is all the hardware can do. Every
+        other ring exists because this loop cannot do enough on its own.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> your line of text has reached a server, and a chip is running the loop
-          over it, one instruction at a time, against billions of numbers held on disk.
+          <b>What is happening:</b> your sentence has reached a server, and a chip is stepping through it one
+          instruction at a time, with the model's numbers sitting on disk behind it.
         </p>
         <p>
-          <b>Without this ring:</b> nothing else exists — no operating system, no agent, no page.
-          Just the loop.
+          <b>Without this ring:</b> nothing exists at all. No operating system, no agent, no page. Only the
+          loop.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            The stored-program CPU: a program counter, a few registers, an arithmetic unit, and memory it can
-            read and write. Its whole repertoire is the instruction cycle.
+            A CPU with a few slots for numbers (registers), a unit that does arithmetic, memory it can read
+            and write, and a marker that says which instruction comes next. That marker is the program
+            counter. A program is only a list of instructions in memory, and the CPU walks the list.
           </p>
           <span class="tag src">source · deck 1 s.8–9</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            The loop has no way out that the program does not choose. It will follow the next instruction
-            forever — round an infinite loop, through a crash. And every second it waits for a slow device is
-            a second the CPU does nothing at all.
+            The loop cannot be escaped from outside. Whatever the program says comes next is what happens,
+            even when that means looping forever or crashing. And while the program waits for a slow device,
+            the CPU sits there doing nothing at all.
           </p>
           <span class="tag inf">inferred from s.8–12</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            None. The core cannot be interrupted, because it has no idea anyone else exists. The escape hatch
-            has to be built into the hardware — which is the next ring.
+            Nothing at this level. The loop cannot be interrupted, because nothing outside it exists yet. The
+            way out has to be built into the hardware, and that is the next ring.
           </p>
           <span class="tag inf">inferred</span>
         </div>
       </div>
 
       <p>
-        The slides spend real time here for a reason: pipelining and superscalar execution
-        <span class="tag src">s.13</span> make the loop <em>faster</em>, but faster is not <em>different</em>.
-        A faster loop is still one loop, and it still cannot be shared. Using the machine fully, and sharing
-        it, are the two problems every ring after this one is about.
+        Chip designers have made this loop much faster over the years. One trick is to start the next
+        instruction before the last one has finished; another is to carry out several at once
+        <span class="tag src">s.13</span>. But faster is not different. It is still one loop, and it still
+        cannot be shared. Every ring after this one is about two problems: using the machine fully, and
+        letting several programs use it.
       </p>
 
       <figure class="fig" data-fig="FIG. 1">
@@ -816,66 +815,65 @@
       <p class="kicker">Ring 1 · the machine learns to be interrupted</p>
       <h2>An interrupt, and something to return to</h2>
       <p class="intro">
-        If a program cannot be stopped from outside, the machine can never be shared. The interrupt is the
-        hardware answer: a signal that grabs the CPU, records where the program had got to, and jumps to a
-        handler.
+        A machine you cannot take control of can only ever run one program. The interrupt is the hardware's
+        way out: a signal from outside makes the CPU stop what it is doing, write down where it had got to,
+        and jump to a small routine that deals with the signal.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> the agent is writing text, one token at a time. The timer, your stop
-          button and the network card all need to reach that loop from outside.
+          <b>What is happening:</b> the agent is writing out its answer word by word. Three things outside it
+          want the CPU's attention: a timer, your stop button, and the network card bringing back data.
         </p>
         <p>
-          <b>Without this ring:</b> the loop runs until the model decides to stop. No timer can check on it,
-          no button can stop it, and the file it asked for is never noticed when it arrives.
+          <b>Without this ring:</b> the loop runs until the program decides to stop. No timer can check on
+          it, no button can stop it, and the data it asked for is never noticed when it arrives.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            A signal on the bus that hands control to a handler routine, found through a table of interrupt
-            vectors. Four kinds: a program trap, a timer, an I/O device, a hardware failure.
+            A signal to the CPU that hands control to a small routine, called the handler. The hardware finds
+            that routine through a table of fixed addresses, the interrupt vector table. Four things raise
+            one: a program doing something illegal, a timer, a device finishing, or a hardware failure.
           </p>
           <span class="tag src">source · deck 1 s.10–11</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            An interrupt gets you <em>out</em> of a program, but out into what? On an early machine the
-            human operator was the scheduler: load the deck, run it, wait, unload. The expensive machine sat
-            idle while a person thought, walked, and mounted tape.
+            An interrupt gets you out of a program, but out to what? On an early machine the schedule was a
+            person. An operator loaded a deck of cards, ran it, waited, then unloaded it. The expensive
+            machine sat idle while a human thought, walked across the room, and mounted the next tape.
           </p>
           <span class="tag src">source · s.30</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            The <b>resident monitor</b>: a program that always sits in memory, loads the next job, and takes
-            control back when that job ends. Jobs are batched with a job control language, and the user loses
-            direct access to the machine.
+            The <b>resident monitor</b>: a program that always stays in memory, starts the next job, and takes
+            control back when that job finishes. Jobs are handed over in batches, with a small language that
+            says what each one needs, and the user no longer touches the machine directly.
           </p>
           <span class="tag src">source · s.30–31</span>
         </div>
       </div>
 
       <p>
-        This is the first time a program is not the most powerful thing in the machine — the monitor is. But
-        look at what has <em>not</em> changed: the batch still runs one job at a time. When the current job
-        asks the card reader for data, the monitor has nothing else to run, because nothing else is in
-        memory. The interrupt bought control. It did not buy sharing.
+        For the first time, a program is not the most powerful thing in the machine — the monitor is. But
+        one thing has not changed. The batch still runs one job at a time. When that job asks the card reader
+        for data, the monitor has nothing else to run, because nothing else is in memory. So the interrupt
+        bought <em>control</em>. It did not buy <em>sharing</em>.
       </p>
 
       <div class="note">
         <span class="nh">Nested interrupts — a detail worth carrying</span>
         <p>
-          Once interrupts exist, an obvious question arrives: what happens if a second one arrives while the
-          first is being handled? Two answers <span class="tag src">s.14</span>: switch interrupts off during
-          the handler, or use <b>priorities</b> so an urgent event can interrupt a less urgent handler. Keep
-          this — it is the same idea as a scheduler taking the CPU from a process, one ring out.
+          Now a new question. What happens if a second interrupt arrives while the first handler is still
+          running? There are two answers <span class="tag src">s.14</span>: turn interrupts off while a
+          handler runs, or give each interrupt a <b>priority</b> so an urgent one can interrupt a less urgent
+          handler. Remember this. It is the same idea as a scheduler taking the CPU away from a process, one
+          ring out.
         </p>
       </div>
 
@@ -926,44 +924,42 @@
       <p class="kicker">Ring 2 · making the idle time usable</p>
       <h2>Multiprogramming: keep a spare job in memory</h2>
       <p class="intro">
-        The fix is almost embarrassingly simple. If the CPU is idle while a job waits for I/O, put
-        <em>several</em> jobs in memory and hand the CPU to whichever one can use it now.
+        The fix is almost embarrassing. If the CPU is idle because a job is waiting for a device, put
+        <em>several</em> jobs in memory and give the CPU to whichever one can use it right now.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> the agent has asked the model server for the next token and is waiting
-          for the reply. That wait is usually most of the time.
+          <b>What is happening:</b> the agent has asked the model server for the next word and is waiting for
+          the reply. That waiting is most of what it does.
         </p>
         <p>
           <b>Without this ring:</b> the machine sits still for the whole round trip. Your editor, your music,
-          your other chat tab — all frozen, because one program is waiting and nothing else may run.
+          your other chat tab — all frozen, because one program is waiting and nothing else is allowed to
+          run.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            Multiprogramming: several jobs in memory at once, with the CPU handed around between them. The
-            other case — one job at a time — is uniprogramming.
+            Multiprogramming: several jobs in memory at once, passing the CPU around between them. The older
+            arrangement, one job at a time, is called uniprogramming.
           </p>
           <span class="tag src">source · deck 1 s.32–33</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            Uniprogramming wastes the most expensive thing in the building. Every I/O request is a stall with
-            nothing to fill it, and early machines cost enough that this was not acceptable.
+            Uniprogramming wastes the most expensive thing in the building. Every time a job asks a device for
+            something, the CPU has nothing to do, and early computers cost far too much to sit idle.
           </p>
           <span class="tag src">source · s.30</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            When job A blocks, run job B. CPU utilisation rises toward the fraction of time <em>some</em> job
-            can compute, not the fraction of time one particular job can.
+            When job A stops to wait, run job B. The CPU is now busy whenever <em>any</em> job can compute,
+            instead of only when that one particular job can.
           </p>
           <span class="tag inf">inferred from s.32–33</span>
         </div>
@@ -994,16 +990,17 @@
       </figure>
 
       <p class="pull">
-        And now a problem appears that no amount of hardware can solve: switching to job B and back to job A
-        means the machine has to remember <em>exactly</em> where A was — its program counter, its registers,
-        its memory, its open files. “A job” is no longer a good enough noun.
+        And now a problem appears that no amount of hardware can solve. To switch to job B and come back to
+        job A, the machine has to remember <em>exactly</em> where A had got to: which instruction was next,
+        what was in its registers, which memory it owned, which files it had open. “A job” is no longer a
+        good enough word for the thing being switched.
         <span>the hinge of the whole course</span>
       </p>
 
       <p>
-        A batch job is a file. What the CPU switches between is something else: a live execution with a
-        position in the instruction stream and a set of held resources. Give that thing a name and a
-        record, and multiprogramming becomes implementable. The next ring is that name.
+        A batch job is a file sitting there. What the CPU switches between is something else: a running
+        thing, partway through its instructions, holding onto memory and files. Give that thing a name and a
+        record, and multiprogramming can actually be built. The next ring is that name.
       </p>
     </div>
   </section>
@@ -1015,58 +1012,58 @@
       <p class="kicker">Target ring · the process</p>
       <h2>A program, once it is actually running</h2>
       <p class="intro">
-        The deck defines it four ways, and each one adds something the last was missing: a program in
-        execution; an instance of a program running on a computer; the thing that can be given to a processor
-        and run; a unit of activity with a sequence of instructions, <em>a current state</em>, and <em>a set of
-        resources it holds</em>.
+        The slides define it four times, and each definition adds something the last one left out. A program
+        in execution. One copy of a program running on a computer. The thing you can hand to a processor to
+        run. And finally: a unit of activity with a sequence of instructions, <em>a state right now</em>, and
+        <em>resources it is holding</em>. That last one is the useful one.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
           <b>What is happening:</b> the agent is paused halfway through an answer, with a file half-read.
-          Something has to hold that half-finished work so it can carry on from exactly the same place.
+          Something has to hold that half-finished work so it can pick up from exactly the same place.
         </p>
         <p>
-          <b>Without this ring:</b> pausing the agent destroys it. Come back to the tab and it starts your
-          prompt again, having lost everything it had already done.
+          <b>Without this ring:</b> pausing the agent would destroy it. Come back to the tab and it starts
+          your prompt over, having lost everything it had already done.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            The process: the operating system's unit of execution. Not the code, which sits on disk as a
-            program, but the running of it — with a position, a state, and resources it holds right now.
+            The process: the operating system's unit of execution. Not the program itself, which sits on
+            disk, but the running of it — with a position in the instructions, a state, and resources it holds
+            right now.
           </p>
           <span class="tag src">source · deck 2 s.5</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            Multiprogramming needs something that can be <b>paused and resumed</b>, and something that can be
-            <b>held responsible</b>. With no record of where each run stopped and what it holds, switching away
-            destroys it — and nobody can say which process owns which memory, file or device.
+            Multiprogramming needs something that can be <b>paused and resumed</b>, and something you can
+            <b>hold responsible</b>. With no record of where a run stopped and what it holds, switching away
+            from it destroys it, and nobody can say which run owns which memory, file, or device.
           </p>
           <span class="tag inf">inferred from s.10, s.22–25</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            The process table, with one <b>PCB</b> (process control block) per process: saved registers, state,
-            identity, memory limits, open files. To switch, save one PCB and load another. “The most important
-            data structure in an OS.”
+            The process table, with one record per process: the <b>process control block</b>, or PCB. It
+            holds the saved registers, the state, the identity, the memory limits and the open files. To
+            switch, save one PCB and load another. The slides call it the most important data structure in an
+            operating system.
           </p>
           <span class="tag src">source · s.22–25</span>
         </div>
       </div>
 
       <p>
-        The slides call this “four independent, sequential processes” while only one runs at a time
-        <span class="tag src">s.10</span>. That is exactly the illusion the PCB makes real: each process is
-        allowed to believe it has a CPU of its own, because the OS can rebuild it exactly. A context switch
-        — swapping which process the CPU is working on — is not magic. It is a save and a load.
+        The slides describe four processes running independently one after another, while only one is on
+        the CPU at any moment <span class="tag src">s.10</span>. That is the trick the PCB makes possible.
+        Each process gets to believe it has a CPU of its own, because the OS can rebuild it exactly from its
+        record. A <b>context switch</b> — changing which process the CPU is working on — is not magic. It is
+        one save and one load.
       </p>
 
       <figure class="fig" data-fig="FIG. 4">
@@ -1104,11 +1101,11 @@
           </div>
         </div>
         <figcaption>
-          <b>Field list</b> <span class="tag ext">external</span> — the deck shows this as Figure 2.4 without
-          transcribing it; the grouping is Tanenbaum's. The deck does say why it matters: every module in the
-          OS reads or changes these blocks, they <em>define the state of the OS</em>, and the hard part is not
-          access but <b>protection</b> — one buggy routine writing a PCB can destroy the system's ability to
-          manage processes <span class="tag src">s.25</span>.
+          <b>What goes in a PCB</b> <span class="tag ext">external</span> — the deck shows this as Figure 2.4
+          without listing the fields; the grouping is Tanenbaum's. The deck does say why it matters. Every
+          part of the OS reads or changes these blocks, they <em>define the state of the OS</em>, and the hard
+          part is not reading them but <b>protecting</b> them: one buggy routine writing a PCB can destroy the
+          system's ability to manage processes <span class="tag src">s.25</span>.
         </figcaption>
       </figure>
 
@@ -1139,10 +1136,10 @@
       </p>
 
       <p>
-        Two consequences follow at once, and both come back later. First, if PCBs are the source of truth,
-        only the kernel may touch them — which forces a privileged mode (Ring 5). Second, if all of a
-        process's state is a record, the record can be <em>moved to disk</em> — which is what Ring 4 does when
-        memory runs out.
+        Two things follow straight away, and both come back later. First, if these records are the truth
+        about every process, then ordinary programs must not touch them — which means the CPU needs a
+        privileged mode (Ring 5). Second, if everything about a process is written down, the whole record can
+        be <em>moved to disk</em>, which is exactly what Ring 4 does when memory fills up.
       </p>
     </div>
   </section>
@@ -1154,47 +1151,46 @@
       <p class="kicker">Ring 4 · the process gets a life story</p>
       <h2>Ready is not the same as blocked</h2>
       <p class="intro">
-        A process is created, runs, waits, dies. Writing those situations down as explicit states is what lets
-        the OS choose sensibly — and, when memory fills with processes that cannot run, move some of them out.
+        A process is created, runs, waits, and dies. Writing those situations down as named states is what
+        lets the OS choose sensibly — and, when memory fills up with processes that cannot run, move some of
+        them out to disk.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> the agent sits in two different kinds of not-running. Waiting for the
-          network is not the same as waiting for a free CPU. One ends when the server answers; the other ends
-          when the scheduler picks it.
+          <b>What is happening:</b> the agent is not running, but for two different reasons. Waiting for the
+          network is not waiting for a free CPU. One ends when the server answers; the other ends when the
+          scheduler picks it.
         </p>
         <p>
-          <b>Without this ring:</b> the scheduler cannot tell those apart, so it hands the CPU to processes
-          that stall immediately — and the idle time Ring 2 removed comes straight back.
+          <b>Without this ring:</b> the scheduler cannot tell those two apart, so it may hand the CPU to a
+          process that stalls immediately — and the idle time Ring 2 removed comes straight back.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            A state model. Two states at its simplest — running, not running — and five in practice: New,
-            Ready, Running, Blocked, Exit. Plus suspended versions that live on disk in a suspend queue.
+            A state model. The simplest version has two states, running and not running. Real systems use
+            five: New, Ready, Running, Blocked, Exit. There are also suspended versions of two of them, which
+            live on disk in a suspend queue.
           </p>
           <span class="tag src">source · deck 2 s.13–21</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            The two-state model cannot schedule. “Not running” merges two opposite situations: <em>wants the
-            CPU now</em> and <em>cannot use it until a disk answers</em>. Pick the wrong one and the CPU idles
-            again — the failure Ring 2 was built to remove.
+            The two-state model cannot schedule. “Not running” lumps together two opposite situations: one
+            process <em>wants the CPU now</em>, another <em>cannot use it until a disk answers</em>. Pick the
+            wrong one and the CPU idles again — the exact failure Ring 2 was built to remove.
           </p>
           <span class="tag inf">inferred from s.13–14</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            Split the waiting processes out as <b>Blocked</b>. When nothing in memory is Ready, swap a blocked
-            one out to disk and load a Ready/Suspend one in. A clock interrupt then makes pre-emption regular
-            — CTSS did it every 0.2 seconds.
+            Split the waiting processes out as <b>Blocked</b>. When nothing in memory is Ready, move a blocked
+            process out to disk and load a Ready/Suspend one back in. A regular clock interrupt then makes
+            pre-emption automatic — the CTSS system did it every 0.2 seconds.
           </p>
           <span class="tag src">source · s.15, deck 1 s.35</span>
         </div>
@@ -1295,19 +1291,19 @@
         </svg>
       </div>
         <figcaption>
-          <b>Click any state.</b> Transitions and their triggers <span class="tag src">s.13–21</span>. The
-          strip below answers a different emergency: memory full of processes that cannot run. The slides are
-          clear that swapping “is an I/O operation and therefore there is the potential for making the problem
-          worse” — it usually helps only because disk is the fastest I/O there is
-          <span class="tag src">s.15</span>.
+          <b>Click any state.</b> Each arrow is a transition, with the event that causes it
+          <span class="tag src">s.13–21</span>. The strip along the bottom answers a different emergency:
+          memory full of processes that cannot run. Careful with swapping, the slides warn — moving a process
+          to disk is itself an I/O operation, so it can make the problem worse. It usually helps only because
+          a disk is the fastest device you can swap to <span class="tag src">s.15</span>.
         </figcaption>
       </figure>
 
       <p>
-        Two details worth keeping. A suspended process is not simply blocked: it may be waiting on nothing,
-        it cannot run immediately, and it stays suspended until something — itself, its parent, the OS —
-        releases it <span class="tag src">s.17</span>. And the two-state model is not so much wrong as
-        under-specified: it is what you get if the only question you ask is “is it on the CPU?”
+        Two details are worth keeping. A suspended process is not simply blocked. It may be waiting on
+        nothing at all, it cannot run yet, and it stays suspended until something releases it — itself, its
+        parent, or the OS <span class="tag src">s.17</span>. And the two-state model is not exactly wrong, it
+        is just too vague: it is what you get if the only question you ask is “is it on the CPU?”
       </p>
     </div>
   </section>
@@ -1319,58 +1315,57 @@
       <p class="kicker">Ring 5 · the door into the kernel</p>
       <h2>Modes, and the calls that cross them</h2>
       <p class="intro">
-        Everything above sits behind a wall. The PCB “defines the state of the OS”, so ordinary code must not
-        touch it — which raises the practical question: how does a program ever get anything done?
+        Everything so far sits behind a wall. The process table defines the state of the whole operating
+        system, so ordinary programs must not touch it. Which raises the obvious question: how does a program
+        get anything done at all?
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> the agent decides to read a file and run a command. It can do neither by
-          itself — that is the kernel's memory, the kernel's disk, the kernel's devices.
+          <b>What is happening:</b> the agent decides to read a file and run a command. It cannot do either on
+          its own. That memory belongs to the kernel, and so do the disk and the devices.
         </p>
         <p>
           <b>Without this ring:</b> either the agent writes straight into the kernel's own data, where one
-          bug takes the whole machine down, or it can do nothing at all. There is no safe middle without a
-          door.
+          mistake takes the whole machine down, or it can do nothing at all. Without a door there is no safe
+          middle.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            Two execution modes, user and kernel, and a system call to cross between them. A call written in
-            C goes to a library routine of the same name, which traps into the kernel.
+            Two modes of execution, user and kernel, and a system call to cross between them. A call written
+            in C reaches a library routine of the same name, which then hands control to the kernel through a
+            special trap instruction.
           </p>
           <span class="tag src">source · deck 1 s.36, deck 2 s.26–29</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            Protected state cannot be edited directly, or one buggy routine takes the machine down. But a
-            process still has to be able to start, replace and end processes. Protection with no door is a
-            machine nobody can use.
+            Protected data must not be edited directly, or one buggy routine takes the machine down. But a
+            process still has to be able to start other processes, replace itself, and end. Protection with no
+            door is a machine nobody can use.
           </p>
           <span class="tag inf">inferred from s.25 + deck 1 s.36</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            A controlled crossing. <b>fork()</b> copies the address space; <b>exec()</b> replaces the program
-            image in place; wait and exit complete the set. In UNIX SVR4 most of the OS can also run inside a
-            user process's own environment, in kernel mode.
+            A controlled crossing. <b>fork()</b> makes a copy of the running program; <b>exec()</b> replaces
+            the program in that copy with a different one; wait and exit finish the set. In UNIX SVR4 most of
+            the operating system can also run inside a user process, in kernel mode.
           </p>
           <span class="tag src">source · deck 2 s.28–37</span>
         </div>
       </div>
 
       <p>
-        <b>fork()</b> is the strange one, and the strangeness is the lesson. It returns <em>twice</em>, in two
-        different processes, with different values. Both copies have the same address space and run
-        independently from there <span class="tag src">deck 2 s.31–32</span>. So the program has to branch on
-        the return value just to know which of the two it is. Every time your agent runs a shell command,
-        this is the pair of calls underneath: copy itself, then overwrite the copy.
+        <b>fork()</b> is the strange one, and the strangeness is the point. It returns <em>twice</em>, in two
+        different processes, with two different values. Both copies have the same memory at first and then go
+        their own way <span class="tag src">deck 2 s.31–32</span>. So the program has to look at the return
+        value just to work out which copy it is. Every time your agent runs a shell command, this is the pair
+        of calls underneath: copy itself, then overwrite the copy.
       </p>
 
       <figure class="fig" data-fig="FIG. 6">
@@ -1450,61 +1445,59 @@ int main(void) {
       <p class="kicker">Ring 6 · the process is too heavy a unit</p>
       <h2>Threads: splitting execution from ownership</h2>
       <p class="intro">
-        A process does two jobs in one coat: it <em>owns</em> an address space, and it <em>runs</em>. Threads
-        are what you get when you pull those apart — and every trade-off in this ring comes from one decision:
-        where the scheduler lives.
+        A process does two jobs at once: it <em>owns</em> a block of memory, and it <em>runs</em>. A thread is
+        what you get when you separate those two. Every trade-off in this ring comes from one decision: does
+        the scheduler live in the application, or in the kernel?
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> the agent is doing several things at once — streaming tokens to your
-          screen, watching for your stop button, running three tool calls. Four jobs, one set of files and
-          one block of memory.
+          <b>What is happening:</b> the agent is doing several things at once: sending words to your screen,
+          watching for your stop button, and running three tool calls. Four jobs, one set of files, one block
+          of memory.
         </p>
         <p>
           <b>Without this ring:</b> each of those needs its own process and its own copy of the whole program,
-          and moving between them costs a full context switch. The stop button would only be checked between
+          and moving between them costs a full context switch. Your stop button would only be checked between
           whole tasks.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            “A unit of execution within a process” — a stream of instructions with its own registers,
-            stack and program counter, sharing the process's code, data and open files. The slides also
-            call it a lightweight process.
+            A unit of execution inside a process: its own instructions, its own registers, its own stack, its
+            own program counter — while sharing the process's code, data, and open files. The slides also call
+            it a lightweight process.
           </p>
           <span class="tag src">source · threads s.5</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            Doing two things at once inside one program used to need a whole new process: new address space,
-            new PCB, full context switch. The cheap alternative has its own cliff — with user-level threads,
-            one blocking system call freezes every thread, and a second CPU cannot be used at all.
+            Doing two things at once inside one program used to need another whole process: another block of
+            memory, another PCB, another full context switch. The cheap alternative has its own cliff — with
+            user-level threads, one blocking system call freezes every thread, and a second CPU cannot be used
+            at all.
           </p>
           <span class="tag src">source · s.12–14</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            Share the address space and switch only registers and stack. Then choose where scheduling
-            happens: in the application's library (ULT), in the kernel (KLT), or both at once (hybrid, as
-            Solaris does).
+            Share the memory and switch only the registers and the stack. Then choose where scheduling
+            happens: inside the application's own library (user-level threads, ULT), inside the kernel
+            (kernel-level threads, KLT), or a mix of both, which is what Solaris does.
           </p>
           <span class="tag src">source · s.12–19</span>
         </div>
       </div>
 
       <p>
-        The consequence of a ULT is worth stating plainly, because it is the exam question: “when a ULT
-        executes a system call, not only is that thread blocked, but all of the threads within the process
-        are blocked as well” <span class="tag src">s.14</span>. The kernel never knew those other threads
-        existed. Kernel-level threads fix that, and pay for it with a mode switch on every switch — the
-        deck points at Table 4.1 and its measured latencies <span class="tag src">s.18</span>.
+        What a user-level thread costs is worth stating plainly, because it is the exam question. When one
+        of them makes a system call, the call blocks — and every other thread in that process blocks with it,
+        because the kernel never knew those threads existed <span class="tag src">s.14</span>. Kernel-level
+        threads fix that, and pay for it with a switch into the kernel on every switch, which the deck
+        measures in Table 4.1 <span class="tag src">s.18</span>.
       </p>
 
       <figure class="fig" data-fig="FIG. 7">
@@ -1634,16 +1627,17 @@ int main(int argc, char** argv) {
       </div>
 
       <p>
-        <code>pthread_join</code> is the part students skip and examiners ask about: without it the parent may
-        exit first, and the finished thread's resources are never reclaimed — the deck's word for that is a
-        <b>zombie thread</b> <span class="tag src">s.40</span>. Joining is the reaping, not the waiting.
+        <code>pthread_join</code> is the line students skip and examiners ask about. Without it the parent
+        may finish first, and the finished thread's resources are never cleaned up. The deck's word for the
+        leftover is a <b>zombie thread</b> <span class="tag src">s.40</span>. Joining is not really waiting;
+        it is tidying up.
       </p>
 
       <p>
-        Servers are where the thread decision becomes throughput, and the deck reduces the design space to
-        three shapes <span class="tag src">s.21–22</span>. They differ only in what the OS is asked to
-        schedule. An agent's backend is one of these three, and which one it is decides whether your prompt
-        waits behind everybody else's.
+        Servers are where the thread decision turns into how much work gets done, and the deck reduces the
+        choices to three shapes <span class="tag src">s.21–22</span>. They differ only in what the operating
+        system is asked to schedule. The backend behind an agent is one of these three, and which one decides
+        whether your prompt waits behind everyone else's.
       </p>
 
       <div class="tablewrap">
@@ -1735,48 +1729,48 @@ int main(int argc, char** argv) {
       <p class="kicker">Ring 7 · the ready queue needs a policy</p>
       <h2>Scheduling: choosing is a value judgement</h2>
       <p class="intro">
-        Ring 4 gave Ready a queue. It did not say who goes first — and that one choice decides whether the
-        machine feels fast, fair, or merely busy.
+        Ring 4 gave Ready a queue. It did not say who goes first. That single choice decides whether the
+        machine feels fast, feels fair, or just feels busy.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
           <b>What is happening:</b> eight agents are open, plus your editor, your build and a video call. All
-          of them are Ready. One CPU.
+          of them are Ready. There is one CPU.
         </p>
         <p>
-          <b>Without this ring:</b> whoever arrived first runs to completion. A forty-minute batch job that
-          started one second before your prompt makes you wait forty minutes for an answer that takes two
-          hundred milliseconds to compute.
+          <b>Without this ring:</b> whoever arrived first runs until it finishes. A forty-minute job that
+          started one second before your prompt makes you wait forty minutes for an answer that needed two
+          hundred milliseconds.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            Hand processes to the processor so the system meets its objectives. Three time scales: long-term
-            admits programs and sets how many sit in memory, medium-term is the swapping decision, short-term
-            is the dispatcher — called whenever a process blocks or could be pre-empted.
+            Handing processes to the CPU so the system meets its goals. It happens on three time scales:
+            long-term decides which programs get in and how many sit in memory, medium-term decides what to
+            move to disk, and short-term picks the next process to run — the dispatcher, called whenever a
+            process blocks or can be interrupted.
           </p>
           <span class="tag src">source · sched s.6–10</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            First come, first served is the obvious policy, and the deck's own example shows the cost: bursts
-            of 24, 3 and 3 in arrival order average a 17-unit wait. FCFS “performs much better for long
-            processes than short ones”, and favours compute-bound work over I/O-bound.
+            First come, first served is the obvious policy, and the deck's own example shows what it costs.
+            Three jobs of 24, 3 and 3 units, in that order, wait an average of 17 units. First come, first
+            served treats long jobs much better than short ones, and it favours work that computes over work
+            that waits for a device.
           </p>
           <span class="tag src">source · s.19–20</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            Separate the <b>selection function</b> (priority, resource needs, or w/e/s — waiting, executed,
-            total service) from the <b>decision mode</b> (pre-emptive or not). Policy becomes a plug-in
-            rather than a property of the queue.
+            Separate <em>how you choose</em> from <em>when you choose</em>. How: by priority, by what the
+            process needs, or by how much it has waited, run, and needs in total. When: only when a process
+            stops by itself, or also when you interrupt it. The policy becomes something you plug in, not a
+            property of the queue.
           </p>
           <span class="tag src">source · s.15–16</span>
         </div>
@@ -1808,20 +1802,22 @@ int main(int argc, char** argv) {
         </div>
         <div class="gantt-axis"><span>0</span><span>15</span><span>30</span></div>
         <figcaption>
-          <b>Same three jobs, three policies.</b> Bursts 24, 3, 3 in arrival order <span class="tag src">s.20</span>;
-          the 17 is the deck's own arithmetic. The SJF and round-robin averages are <span class="tag inf">inferred</span>
-          — computed from the same bursts, with a quantum I chose. Note what FCFS does to P3: it waits 27
-          units for three units of work, which is the response-time argument for round robin in one picture.
+          <b>Same three jobs, three policies.</b> Jobs of 24, 3 and 3 units of work, arriving in that order
+          <span class="tag src">s.20</span>; the 17 is the deck's own arithmetic. The shortest-job-first and
+          round-robin averages are <span class="tag inf">inferred</span> — computed from the same three
+          jobs, with a time slice I chose. Look at what first-come-first-served does to the third job: it
+          waits 27 units for 3 units of work, which is the whole argument for round robin in one picture.
         </figcaption>
       </figure>
 
       <p>
-        Each algorithm is one answer to the same tension. SPN/SJF minimises average waiting and is
-        impossible in practice without knowing the future — and it starves long jobs. SRT makes it
-        pre-emptive. Round robin bounds response time with a quantum, which is its whole design question.
-        HRRN divides by service time but adds age, so a long job eventually wins. Multilevel queues with
-        feedback demote CPU-hungry processes and promote the patient. Fair share stops scheduling processes
-        altogether and schedules users <span class="tag src">s.21–30</span>.
+        Each algorithm answers the same tension in a different way. Shortest job first gives the lowest
+        average wait, but only if you can see the future, and it lets long jobs starve. Shortest remaining
+        time makes that pre-emptive. Round robin limits how long anyone waits by giving each process a fixed
+        slice, called a quantum. Highest response ratio next divides by service time but adds how long the
+        job has waited, so a long job eventually wins. Multilevel queues with feedback push CPU-hungry
+        processes down and pull patient ones up. Fair share stops scheduling processes and schedules users
+        <span class="tag src">s.21–30</span>.
       </p>
 
       <figure class="fig" data-fig="FIG. 9">
@@ -1886,12 +1882,13 @@ int main(int argc, char** argv) {
           </g>
         </svg>
         <figcaption>
-          <b>Threads and the quantum.</b> The deck's Figure 2.45 settings — a 50 ms process quantum and threads
-          that run 5 ms per CPU burst <span class="tag src">s.31</span> — drawn as a timeline. The layouts are
-          <span class="tag inf">inferred</span> from that description, and they are the whole argument for
-          kernel threads: under ULT the OS never chooses between A and B inside a quantum, so a thread that
-          keeps computing keeps the whole process's slice, while under KLT the fairness is per thread and the
-          bill is paid in mode switches.
+          <b>Threads and the time slice.</b> The deck's Figure 2.45 settings — a 50 ms slice per process, with
+          threads that compute 5 ms at a time <span class="tag src">s.31</span> — drawn as a timeline. The
+          layouts are <span class="tag inf">inferred</span> from that description, and together they are the
+          whole argument for kernel-level threads. With user-level threads the OS never chooses between A
+          and B inside a slice, so one thread that keeps computing keeps the whole process's time. With
+          kernel-level threads the fairness is per thread, and you pay for it in extra switches into the
+          kernel.
         </figcaption>
       </figure>
 
@@ -1902,11 +1899,14 @@ int main(int argc, char** argv) {
       </p>
 
       <p>
-        The criteria conflict by construction — CPU utilisation, throughput, turnaround, waiting time,
-        response time <span class="tag src">s.14</span>. Choosing an algorithm is choosing which of the five
-        you are willing to lose, which is why the deck lists goals by workload type (batch, interactive, real
-        time) rather than crowning a winner <span class="tag src">s.17–18</span>. An agent is the interactive
-        case with a person watching: that is exactly what round robin and priority are for.
+        The five things you might want from a scheduler conflict by construction:
+        <b>CPU utilisation</b> (keep the processor busy), <b>throughput</b> (finish the most jobs per hour),
+        <b>turnaround time</b> (how long a job takes from start to finish), <b>waiting time</b> (time spent
+        sitting in queues), and <b>response time</b> (how fast the first sign of an answer appears)
+        <span class="tag src">s.14</span>. Choosing an algorithm is choosing which of the five you are
+        willing to lose, which is why the deck gives goals per workload type — batch, interactive, real time —
+        instead of crowning a winner <span class="tag src">s.17–18</span>. An agent is the interactive case
+        with a person watching, which is exactly what round robin and priority are for.
       </p>
     </div>
   </section>
@@ -1918,48 +1918,47 @@ int main(int argc, char** argv) {
       <p class="kicker">Ring 8 · sharing makes the answer order-dependent</p>
       <h2>Synchronisation: whoever writes last decides</h2>
       <p class="intro">
-        Threads share memory. That is the whole point of them, and it is also the bug: two threads reading and
-        writing the same word have no agreed order, and neither does the program.
+        Threads share memory. That is the whole point of them, and it is also the bug. Two threads reading
+        and writing the same number have no agreed order between them, so neither does the program.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
-          <b>What is happening:</b> two threads of the same agent append to one conversation history. One
-          writes the reply, the other logs a tool result. Both read the same length, both write length + 1 —
-          and one message disappears.
+          <b>What is happening:</b> two threads of the same agent add to one conversation history. One writes
+          the reply, the other logs a tool result. Both read the same length, both write length + 1, and one
+          message disappears.
         </p>
         <p>
-          <b>Without this ring:</b> the transcript quietly loses entries, the retry count drifts, and the bug
-          will not reproduce, because it depends on a timing you cannot see.
+          <b>Without this ring:</b> the transcript quietly loses messages, the retry count drifts, and the
+          bug never reproduces on demand, because it depends on timing you cannot see.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            Concurrency is interleaving (one CPU, switched) or overlapping (several CPUs), and “both present
-            the same problems”. The critical section is the part of a program that touches shared data;
-            mutual exclusion means at most one process is inside its critical section at a time.
+            Two names first. <b>Concurrency</b> means two things happening at once, either by taking turns on
+            one CPU or truly together on several; the problems are the same either way. The <b>critical
+            section</b> is the few lines of code that touch shared data. <b>Mutual exclusion</b> means only
+            one process is inside its critical section at a time.
           </p>
           <span class="tag src">source · sync s.6, s.14</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            A race condition: processes read and write the same items and the final result depends on the
-            order of execution — “the loser of the race is the process that updates last”. Such bugs are
-            neither deterministic nor reproducible.
+            A <b>race condition</b>: two processes read and write the same data, and the final answer depends
+            on who got there last. The loser is the process whose update is overwritten. Bugs like this do not
+            happen every time, which is what makes them so hard to find.
           </p>
           <span class="tag src">source · s.9, s.7</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            Make the interval un-interruptible, or make entry exclusive: switch interrupts off (single CPU
-            only), atomic compare-and-swap or TSL, strict alternation, Peterson's solution, semaphores,
-            monitors, or passing messages.
+            Either make the read-and-write impossible to interrupt, or let only one thread in at a time. In
+            practice that means a lock: something you take before the critical section and release after it.
+            The rest of the ring is the menu of ways to build that lock, from hardware instructions, through
+            Peterson's algorithm and semaphores, to monitors and message passing.
           </p>
           <span class="tag src">source · s.17–39</span>
         </div>
@@ -1999,24 +1998,25 @@ int main(int argc, char** argv) {
       </ol>
 
       <p>
-        Rule 2 is the one that ages the whole ring, and Ring 10 will collect on it. Note also what the deck
-        does with cost: <code>semWait</code> and <code>semSignal</code> “must be implemented as atomic
-        primitives”, in hardware or firmware, or on top of Dekker/Peterson/TSL <span class="tag src">s.24, s.34</span>.
-        Monitors then move the discipline into the language, with condition variables and
-        <code>cwait</code>/<code>csignal</code> <span class="tag src">s.35–37</span>.
+        Rule 2 is the one that ages badly, and Ring 10 will collect on it. Notice also what the deck says
+        about the cost of a lock: <code>semWait</code> and <code>semSignal</code> must themselves be
+        indivisible, built in hardware or firmware, or on top of Dekker, Peterson, or TSL
+        <span class="tag src">s.24, s.34</span>. Monitors then move the discipline into the language itself,
+        with condition variables and <code>cwait</code>/<code>csignal</code> <span class="tag src">s.35–37</span>.
       </p>
 
       <p>
-        The deck's third objective is to <em>compare</em> these mechanisms, and comparison needs a fixed
-        problem. Two problems do that work for the rest of the ring.
+        The deck's third aim is to <em>compare</em> these mechanisms, and comparing needs a fixed problem.
+        Two problems do that work for the rest of the ring.
       </p>
 
       <h3 class="sub">Producer/consumer, on a bounded buffer</h3>
       <p>
-        A producer appends items to a buffer of N slots, a consumer removes them. Three separate conditions
-        hide in that sentence: one writer at a time inside the buffer, no appending into a full buffer, and no
-        removing from an empty one. Three semaphores, one per condition, and the code almost writes itself
-        <span class="tag src">s.28–30</span>. This is also the shape of the model backend's queue — requests
+        A producer adds items to a buffer with N slots; a consumer takes them out. Three separate rules
+        hide in that one sentence: only one of them inside the buffer at a time, never add to a full buffer,
+        never take from an empty one. Three semaphores, one per rule, and the code almost writes itself
+        <span class="tag src">s.28–30</span>. This is also the shape of the queue in front of a model
+        backend: requests
         in, replies out, a fixed number of workers.
       </p>
 
@@ -2041,14 +2041,14 @@ producer()                                  consumer()
         <span class="nh">The order of the two waits is the exam question</span>
         <p>
           Swap the first two lines in the producer so it takes <code>mutex</code> before <code>empty</code>.
-          Nothing looks wrong, and when the buffer fills the producer blocks <em>holding the lock</em>; the
-          consumer can never get in to free a slot, and both sleep forever. One reordered line manufactures
-          Ring 9 out of Ring 8 <span class="tag inf">inferred</span>.
+          Nothing looks wrong. But when the buffer fills, the producer stops while <em>still holding the
+          lock</em>. The consumer needs that lock to free a slot, so it can never get in, and both sleep
+          forever. One swapped line turns Ring 8 into Ring 9 <span class="tag inf">inferred</span>.
         </p>
         <p>
-          <code>semWait</code> and <code>semSignal</code> themselves must be atomic
-          <span class="tag src">s.34</span>, which is why the argument stops at hardware instructions and
-          never quite leaves them.
+          <code>semWait</code> and <code>semSignal</code> have to be indivisible themselves
+          <span class="tag src">s.34</span>, which is why the argument always ends up back at hardware
+          instructions.
         </p>
       </div>
 
@@ -2063,27 +2063,27 @@ producer()                                  consumer()
         <li>If a writer is writing, no reader may read it.</li>
       </ol>
       <p>
-        This is the first problem where mutual exclusion is <em>too strong</em>: applying it to readers would
-        serialise work with no conflict in it. The semaphore solution counts readers, lets the first lock and
-        the last unlock, and makes the writer wait for the count to reach zero. Which is the catch: in a busy
-        system the count never reaches zero, so the writer is correct and starved, and rule 4 above is broken
-        by a solution that satisfies the other three <span class="tag inf">inferred</span>.
+        This is the first problem where mutual exclusion is <em>too strong</em>. Making readers take turns
+        would slow down work that has no conflict in it. So the solution counts readers: the first one locks,
+        the last one unlocks, and the writer waits until the count reaches zero. Which is the catch. On a
+        busy system the count never reaches zero, so the writer is treated correctly and starved anyway — a
+        solution that keeps the first three rules and breaks the fourth <span class="tag inf">inferred</span>.
       </p>
 
       <p>
-        That is what makes the semaphore <b>strong</b> or <b>weak</b> <span class="tag src">s.26</span>. Give it a
-        queue and wake-ups happen in arrival order, so waiting is bounded. Remove the queue and a process can
-        be passed over indefinitely — which is exactly the difference between “the mechanism is correct” and
-        “the mechanism is fair”.
+        That is the difference between a <b>strong</b> and a <b>weak</b> semaphore
+        <span class="tag src">s.26</span>. Give it a queue and waiting processes are woken in the order
+        they arrived, so nobody waits forever. Take the queue away and a process can be skipped indefinitely.
+        That is the difference between “it works” and “it is fair”.
       </p>
 
       <h3 class="sub">The other half of the title: IPC without shared memory</h3>
       <p>
-        Everything above assumes two execution streams can touch the same word. The deck closes with three
-        mechanisms that do not need that assumption — messages,
-        <b>signals</b> <span class="tag src">s.38–47</span>, and a shared-memory region mapped in by a system
-        call <span class="tag src">s.40–42</span>. Messages you have already met. A signal is the smallest
-        possible one: a single integer delivered to a process, and a handler that runs in its context.
+        Everything above assumes two threads can touch the same number. The deck ends with ways to talk that
+        do not need shared memory: messages, <b>signals</b> <span class="tag src">s.38–47</span>, and a region
+        of memory both processes map in through a system call <span class="tag src">s.40–42</span>. You have
+        met messages. A signal is the smallest message there is: one number delivered to a process, which
+        runs a handler in response.
       </p>
 
       <div class="tablewrap">
@@ -2103,18 +2103,18 @@ producer()                                  consumer()
       </p>
 
       <p>
-        The shape is Ring 1 arriving in user space <span class="tag inf">inferred</span>: an asynchronous event
-        interrupts whatever the process was doing, control jumps to a handler of the form
-        <code>void name(int)</code>, and <code>signal(SIGINT, handler)</code> installs it
-        <span class="tag src">s.46–47</span>. <code>kill(pid, sig)</code> is the sender — a name that misleads,
-        since the signal is only a request and only some of them are fatal.
+        This is Ring 1 again, now inside a program <span class="tag inf">inferred</span>. Something happens
+        outside the process, control jumps to a handler written as <code>void name(int)</code>, and
+        <code>signal(SIGINT, handler)</code> is how you install it <span class="tag src">s.46–47</span>.
+        <code>kill(pid, sig)</code> is how one process sends it. The name misleads: a signal is only a
+        request, and only some of them kill.
       </p>
 
       <p>
-        The hinge to the next ring is one sentence in the slides: for cooperation by communication,
-        “mutual exclusion is not a control requirement” — but “the problems of deadlock and starvation are
-        still present” <span class="tag src">s.13</span>. Mutual exclusion is only one of the four ways to
-        get stuck, and removing it removes none of the others.
+        The way into the next ring is one sentence in the slides. If processes cooperate by sending
+        messages, they no longer need mutual exclusion — but deadlock and starvation are still there
+        <span class="tag src">s.13</span>. Mutual exclusion is only one of the four conditions that cause a
+        deadlock, so removing it removes none of the others.
       </p>
     </div>
   </section>
@@ -2126,8 +2126,9 @@ producer()                                  consumer()
       <p class="kicker">Ring 9 · the bill for mutual exclusion</p>
       <h2>Deadlock: the state with no exit</h2>
       <p class="intro">
-        Ring 8 bought safety with mutual exclusion and hold-and-wait. Ring 9 is the bill. Add two more
-        conditions and you get a set of processes where every way out depends on another member of the set.
+        Ring 8 bought safety by making processes wait for each other. Ring 9 is the bill. Add two more
+        conditions and you get a group of processes where every way out depends on another member of the
+        group.
       </p>
 
       <div class="beat">
@@ -2138,36 +2139,35 @@ producer()                                  consumer()
           holding. Nothing is slow. Nothing is broken. Nothing will ever move again.
         </p>
         <p>
-          <b>What it looks like:</b> a spinner that never settles — no error, no timeout, no crash to point
-          at. This is the thing users mean by “the agent froze”.
+          <b>What it looks like:</b> a spinner that never stops. No error, no timeout, no crash to point at.
+          This is what people mean when they say the agent froze.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            “The permanent blocking of a set of processes that either compete for system resources or
-            communicate with each other” — each blocked awaiting an event that only another blocked process
-            in the set can trigger, permanent because none is ever triggered.
+            A set of processes that are permanently stuck. Each one is waiting for something that only
+            another member of the set can do, so none of them can ever move — and that is why it lasts
+            forever, not just for a while.
           </p>
           <span class="tag src">source · deadlock s.4</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            The four conditions arrive together, and three were already built: mutual exclusion, hold-and-wait,
-            no-preemption, and finally a circular wait. Ring 4's Blocked state stops being something you
-            pass through.
+            Four things have to be true together. Three were already built by earlier rings: mutual
+            exclusion (a lock), hold-and-wait (a process keeps one thing while asking for another), and no
+            preemption (nothing can take a resource away). Add the fourth, a circular wait, and Ring 4's
+            Blocked state stops being a place you pass through.
           </p>
           <span class="tag src">source · s.10</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            Four families: prevention (break one condition), avoidance (banker's algorithm — never leave a
-            safe state), detection (search the resource graph), and recovery (abort, roll back to a
-            checkpoint, pre-empt).
+            Four ways to deal with it: prevention (arrange the program so one condition can never be true),
+            avoidance (check each request and refuse the ones that would make a deadlock possible), detection
+            (let it happen, then look for it), and recovery (abort a process, roll back to a saved point, or
+            take a resource away).
           </p>
           <span class="tag src">source · s.15–32</span>
         </div>
@@ -2283,25 +2283,27 @@ producer()                                  consumer()
           <text class="s-lbl-s" x="430" y="266" style="font-size:9.2px">or communicate with each other”.</text>
         </svg>
         <figcaption>
-          <b>Two shapes of the same cycle.</b> The dining philosophers are the reusable case — mutual exclusion
-          plus “no philosopher must starve” <span class="tag src">deadlock s.35</span>, with the left-then-right
-          pick-up shown as the figure's classic protocol <span class="tag ext">external</span>. The message
-          pair is the consumable case, and it is the deck's own example <span class="tag src">s.9</span>: two
-          processes each waiting to receive from the other, so nothing is ever sent.
+          <b>Two shapes of the same cycle.</b> The dining philosophers are the reusable example: five people
+          around a table, one fork between each pair, and everyone picks up the left fork first — so everyone
+          holds one fork and waits for another. That is mutual exclusion plus a no-starvation rule
+          <span class="tag src">deadlock s.35</span>, with the left-then-right pick-up as the classic
+          protocol <span class="tag ext">external</span>. The message pair is the other shape: two processes
+          each waiting to receive from the other, so nothing is ever sent. It is the deck's own example
+          <span class="tag src">s.9</span>.
         </figcaption>
       </figure>
 
       <p>
-        The philosophers also show why the cure is a rule rather than a machine. Make one of them take the
-        right fork first and the circular wait cannot close — prevention by resource ordering, drawn as a
-        dinner table. The message pair shows the opposite lesson: remove every shared object and the cycle
-        survives, because blocking is a resource too.
+        The philosophers also show why the fix is a rule and not a machine. Make one of them pick up the
+        right fork first and the circle cannot close — that is prevention by ordering resources, drawn as a
+        dinner table. The message pair shows the opposite lesson: take away every shared object and the cycle
+        survives, because waiting is itself a resource.
       </p>
 
       <p>
-        In agent terms the philosophers are two tools that need the same file, each called while the other is
-        held. Prevention is a rule you enforce in the tool layer — always take locks in the same order, and
-        never hold one while you call out.
+        For an agent, the philosophers are two tools that need the same file and are called while the other
+        is still holding it. Prevention is a rule in the tool layer: always take locks in the same order, and
+        never hold one while you call out to something else.
       </p>
 
       <div class="tablewrap">
@@ -2320,36 +2322,35 @@ producer()                                  consumer()
       </p>
 
       <p>
-        Avoidance is the subtle one, because it grants a request that is free and still refuses it. A state is
-        <b>safe</b> when there is at least one order in which every process can finish with what is currently
-        available <span class="tag src">s.20</span>; the banker's algorithm grants a request only if the result
-        is still safe <span class="tag src">s.23–27</span>. That is why it needs the future: the answer depends
-        on requests nobody has made yet. The deck credits it with avoiding pre-emption and rollback and with
-        being less restrictive than prevention <span class="tag src">s.28</span>, and the price is exactly the
-        information it consumes — processes must declare their maximum needs in advance
-        <span class="tag inf">inferred</span>.
+        Avoidance is the subtle one, because it can refuse a request that would have been granted for free.
+        A state is <b>safe</b> if there is at least one order in which every process can finish with what is
+        free right now <span class="tag src">s.20</span>. The banker's algorithm grants a request only when
+        the result is still safe <span class="tag src">s.23–27</span>. That is why it needs to know the
+        future: whether a request is safe depends on requests nobody has made yet. Its advantages are that
+        nothing has to be pre-empted or rolled back, and that it refuses less than prevention does
+        <span class="tag src">s.28</span>. Its price is the information it needs — every process must declare
+        its maximum needs in advance <span class="tag inf">inferred</span>.
       </p>
 
       <p>
-        The deck is blunt about the limits: “no efficient solution in the general case” <span class="tag src">s.4</span>.
-        Avoidance needs the future (“requires knowledge of future process requests”) <span class="tag src">s.18</span>,
-        detection needs to be run at some chosen frequency, and recovery is always ugly — abort everything,
-        or unwind to checkpoints <span class="tag src">s.31–32</span>. The practical answer is the integrated
-        strategy: group resources into classes and use a different technique inside each
+        The deck is blunt about the limits: there is no efficient solution in the general case
+        <span class="tag src">s.4</span>. Avoidance needs to know future requests <span class="tag src">s.18</span>.
+        Detection has to be run at some frequency you choose. And recovery is always ugly — abort
+        everything, or rewind to a saved point <span class="tag src">s.31–32</span>. The practical answer is
+        to mix them: sort resources into classes and use a different technique in each
         <span class="tag src">s.33–34</span>.
       </p>
 
       <p>
-        The deck's last three slides are the reality check, and none of them is a new ring — each is a Ring 8
-        mechanism with an engineering trade baked in. Linux protects most critical sections with a
-        <b>spinlock</b>: a thread loops on a word in memory until it acquires it, which is cheaper than sleeping
-        only while the expected wait is short, and pure waste when it is not
-        <span class="tag src">s.37</span>. Windows exposes synchronisation as part of its object architecture,
-        so a thread waits on an object rather than on a loose variable <span class="tag src">s.38</span>
-        <span class="tag ext">the object types are a figure</span>. Android adds
-        <b>Binder</b> to the kernel — a lightweight RPC over <code>ioctl</code> that mediates every interaction
-        between two processes <span class="tag src">s.40–41</span>. Three different answers, one question: who
-        pays for the wait, the spinner or the sleeper.
+        The deck's last three slides are the reality check, and none of them adds a new ring. Each is a Ring
+        8 mechanism with a trade-off built in. Linux protects most critical sections with a <b>spinlock</b>:
+        a thread loops on a word in memory until it gets it. That is cheaper than going to sleep while the
+        wait is short, and pure waste when it is long <span class="tag src">s.37</span>. Windows makes
+        synchronisation part of its object system, so a thread waits on an object rather than a loose
+        variable <span class="tag src">s.38</span> <span class="tag ext">the object types are a figure</span>.
+        Android puts <b>Binder</b> in the kernel — a lightweight remote call that carries every message
+        between two processes <span class="tag src">s.40–41</span>. Three answers to one question: who pays
+        for the wait, the spinning thread or the sleeping one?
       </p>
     </div>
   </section>
@@ -2361,46 +2362,47 @@ producer()                                  consumer()
       <p class="kicker">Ring 10 · the assumption breaks</p>
       <h2>Many processors: simultaneous means simultaneous</h2>
       <p class="intro">
-        Every ring so far quietly assumed one instruction stream at a time. Two CPUs make that false, and take
-        a dozen convenient assumptions with it — starting with the way the last two rings kept order.
+        Every ring so far quietly assumed one instruction at a time. Two CPUs make that false, and they take
+        a handful of convenient assumptions with them — starting with the way the last two rings kept things
+        in order.
       </p>
 
       <div class="beat">
         <span class="bh">The prompt, at this ring</span>
         <p>
           <b>What is happening:</b> the agent's three tool calls are running at the same instant, on
-          different cores, or on different machines. Not interleaved — simultaneous.
+          different cores or on different machines. Not taking turns. Simultaneous.
         </p>
         <p>
-          <b>Without this ring:</b> the machine can never do two things at once, only appear to. Every trick
-          in Ring 8 was written for the pretending case, and some of them stop working here.
+          <b>Without this ring:</b> the machine can never do two things at once, only look as if it does.
+          Every trick in Ring 8 was written for that pretence, and some of them stop working here.
         </p>
       </div>
 
       <div class="triad">
-        <div class="t-concept">
-          <h3>The concept</h3>
+        <div class="t-concept">            <h3>The idea</h3>
           <p>
-            “An interconnection of two or more CPUs with memory and input-output equipment.” Shared-memory
-            multiprocessors (UMA, NUMA), message-passing multicomputers, wide-area distributed systems — and
-            three OS structures: one OS per CPU, leader–follower, or SMP.
+            Two or more CPUs connected to memory and devices. They come in flavours: shared-memory
+            multiprocessors (UMA and NUMA), separate machines that pass messages, and wide-area distributed
+            systems. The operating system can be arranged three ways: one OS per CPU, a leader with
+            followers, or one OS spread over every CPU (SMP).
           </p>
           <span class="tag src">source · multiprocessors s.4, s.11, s.17–19</span>
         </div>
-        <div class="t-bottle">
-          <h3>The bottleneck</h3>
+        <div class="t-bottle">            <h3>What it could not do</h3>
           <p>
-            Interleaving becomes overlapping. Disabling interrupts — the uniprocessor answer to mutual
-            exclusion — “will not work in a multiprocessor architecture”. Memory becomes the contested
-            resource: bus contention, crossbar switches, remote memory slower than local.
+            Taking turns becomes really happening at once. Turning interrupts off — the single-CPU answer to
+            mutual exclusion — does not work when there are several CPUs. And memory becomes the thing
+            everyone fights over: the shared bus gets crowded, and in NUMA systems remote memory is slower
+            than local memory.
           </p>
           <span class="tag src">source · sync s.17, multiprocessors s.12–16</span>
         </div>
-        <div class="t-break">
-          <h3>The breakthrough</h3>
+        <div class="t-break">            <h3>What fixed it</h3>
           <p>
-            SMP: one OS image, every CPU equal, any thread on any CPU — which is only usable because Ring 6
-            made threads schedulable objects. Granularity then decides what is worth parallelising.
+            SMP: one copy of the OS, every CPU equal, any thread allowed on any CPU. That only works because
+            Ring 6 made threads into objects the OS can schedule. After that, the question is how big a piece
+            of work has to be before splitting it pays off.
           </p>
           <span class="tag src">source · s.7–10, s.19</span>
         </div>
@@ -2436,48 +2438,49 @@ producer()                                  consumer()
           </div>
         </div>
         <figcaption>
-          <b>The hardware spectrum</b> <span class="tag src">multiprocessors s.11–21</span>. Moving right, the
-          rings to its left stop being about protecting shared words and start being about sending messages
-          — but deadlock and starvation travel with you <span class="tag src">sync s.13</span>.
+          <b>The hardware spectrum</b> <span class="tag src">multiprocessors s.11–21</span>. Read left to
+          right and the earlier rings change meaning: they stop being about protecting a shared number and
+          start being about sending messages. Deadlock and starvation come along to every point on the line
+          <span class="tag src">sync s.13</span>.
         </figcaption>
       </figure>
 
       <p>
-        The spectrum hides three hardware answers to the same contention, and they are a cost curve rather
-        than a list <span class="tag src">s.12–16</span>. A <b>bus</b> gives every CPU the same path to memory
-        for the price of one shared wire — until every CPU misses cache at once and the bus becomes the
-        bottleneck. A <b>crossbar</b> gives every CPU–memory pair its own switch, so paths never contend; the
-        price grows as the square of the CPU count. A <b>multistage switching network</b> routes messages
-        through stages of 2×2 switches — a middle point where paths sometimes block instead of always
-        contending. NUMA then adds a <b>directory</b>: each node records who holds a copy of each block, so a
-        remote read is a message to the owner rather than a broadcast to everyone.
+        Behind the spectrum sit three hardware answers to the same crowding, and they form a cost curve
+        more than a list <span class="tag src">s.12–16</span>. A <b>bus</b> gives every CPU the same wire to
+        memory — cheap, until several CPUs want memory at once and the wire becomes the bottleneck. A
+        <b>crossbar</b> gives every CPU its own path to every memory bank, so paths never collide; the cost
+        grows with the square of the number of CPUs. A <b>multistage network</b> sits between the two,
+        sending each request through a series of small switches, so paths sometimes collide instead of
+        always. NUMA adds a <b>directory</b>: each node keeps a note of who holds a copy of which block, so a
+        remote read becomes one message to the owner instead of a shout to everyone.
       </p>
 
       <p>
-        Three OS structures sit on that hardware, and the trade is always the same — who is allowed to touch
-        kernel data <span class="tag src">s.17–19</span>. <em>One OS per CPU</em> partitions memory and shares a
-        single copy of the code, with private data per CPU: no locks at all, but a busy CPU cannot borrow an
-        idle one's work and a process cannot migrate. <em>Leader–follower</em> keeps all kernel work on the
-        leader and lets followers run only user code: kernel data needs no locks, but every system call
-        funnels through one CPU, which is now the bottleneck. <em>SMP</em> puts one OS image on every CPU and
-        lets any thread run anywhere: no wasted cores, and the bill is every lock from Ring 8 plus cache
-        coherence <span class="tag inf">inferred</span>. What is bought with all of it is throughput that a
-        single CPU cannot reach, and a machine that survives one CPU failing
+        Three operating-system arrangements sit on that hardware, and the trade is always the same: who is
+        allowed to touch the kernel's data <span class="tag src">s.17–19</span>. <em>One OS per CPU</em>
+        splits memory between CPUs and shares one copy of the code: no locks at all, but a busy CPU cannot
+        take an idle one's work, and a process cannot move between CPUs. <em>Leader and followers</em> keeps
+        all kernel work on one CPU and lets the others run only user programs: kernel data needs no locks,
+        but every system call now queues at one CPU. <em>SMP</em> runs one copy of the OS on every CPU and
+        lets any thread run anywhere: no idle cores, but you pay every lock from Ring 8 plus the cost of
+        keeping the caches consistent <span class="tag inf">inferred</span>. What all of it buys is
+        throughput one CPU cannot reach, and a machine that keeps running when one CPU dies
         <span class="tag inf">inferred</span>.
       </p>
 
       <p>
-        Granularity is the deck's way of asking “what is worth running in parallel?” <span class="tag src">s.7–10</span>:
-        independent work needs nothing new, coarse-grained work behaves like concurrent processes on a
-        uniprocessor, medium-grained work is <em>threads inside one process</em> — and because those threads
-        interact constantly, “scheduling decisions concerning one thread may affect the performance of the
-        entire application” <span class="tag src">s.9</span>. Fine-grained parallelism, the deck says plainly,
-        is “a specialized and fragmented area” <span class="tag src">s.10</span>.
+        Granularity is the deck's way of asking “what is worth running in parallel?”
+        <span class="tag src">s.7–10</span>. Independent work needs nothing new. Coarse-grained work behaves
+        like concurrent processes on one CPU. Medium-grained work is <em>threads inside one process</em>, and
+        because those threads talk to each other constantly, scheduling one of them can change how the whole
+        program performs <span class="tag src">s.9</span>. Fine-grained parallelism, the deck says plainly, is
+        a specialised and fragmented area <span class="tag src">s.10</span>.
       </p>
 
       <p>
-        That sentence closes a loop worth noticing: the scheduling policy from Ring 7, applied to the threads
-        from Ring 6, on the hardware from this ring, determines whether adding a core helps at all.
+        That closes a loop worth noticing: the scheduling policy from Ring 7, applied to the threads from
+        Ring 6, on the hardware from this ring, decides whether adding another core helps at all.
       </p>
     </div>
   </section>
@@ -2489,8 +2492,8 @@ producer()                                  consumer()
       <p class="kicker">Beyond the last ring</p>
       <h2>The question the course ends on</h2>
       <p class="intro">
-        The multiprocessor deck does not close with a definition. It closes with a discussion — and it is the
-        right question to answer in the language of the rings.
+        The multiprocessor deck does not end with a definition. It ends with a discussion question, and it
+        is a good one to answer using the rings.
       </p>
 
       <div class="beat">
@@ -2515,29 +2518,28 @@ producer()                                  consumer()
       </blockquote>
 
       <p>
-        <span class="tag inf">inferred</span> &nbsp;The operating system's own services, first — and three
-        reasons that come straight out of the rings. The OS is already concurrent by construction: it
-        schedules, multiplexes I/O and manages the cache, so there is no new decomposition problem to solve.
-        A parallel TCP path or a parallel crypto library is solved once and collected by every application,
-        without asking a single programmer to think about threads. And most desktop code is I/O-bound rather
-        than compute-bound, so a hundred cores give it very little extra to do — the burst pattern Ring 7 was
-        built around <span class="tag src">sched s.4</span>.
+        <span class="tag inf">inferred</span> &nbsp;The operating system's own services, first — for three
+        reasons that come straight out of the rings. The OS is already built to do several things at once: it
+        schedules, overlaps device waits, and manages memory, so there is nothing new to break into pieces.
+        A parallel network path or a parallel encryption library is written once and used by every program,
+        without asking a single programmer to think about threads. And most desktop programs spend their time
+        waiting rather than computing, so a hundred cores give them very little extra to do — the burst
+        pattern Ring 7 was built around <span class="tag src">sched s.4</span>.
       </p>
 
       <p>
-        The application route holds the deeper gain and the harder problem: someone has to find the
-        parallelism, and then survive Rings 8 and 9 while using it. So the honest answer is both, in that
-        order — infrastructure first because it is shared, applications second because that is where the
-        general-purpose work actually lives.
+        The application route has more to gain and is harder: someone has to find the parallelism in each
+        program, then live with Rings 8 and 9 while using it. So the honest answer is both, in that order —
+        the infrastructure first because everyone shares it, applications second because that is where most
+        of the work actually is.
       </p>
 
       <p>
-        Past that, the machine stops being one machine. A distributed system gives every node private memory
-        with “no shared physical memory in the system”, and the only way to make the collection look uniform
-        is a layer above the operating system: middleware
-        <span class="tag src">multiprocessors s.20–21</span>. The send/receive pair from Ring 8 becomes the
-        whole interface, and Rings 7 and 9 do not go away — they get harder, because the delay is now
-        unbounded.
+        Past that point the machine stops being one machine. In a distributed system every node has its own
+        private memory and there is no shared memory at all, so the only way to make the collection look like
+        one system is a layer above the operating system, called middleware
+        <span class="tag src">multiprocessors s.20–21</span>. Sending and receiving becomes the whole
+        interface, and Rings 7 and 9 do not disappear — they get harder, because the delay is now unbounded.
       </p>
 
       <h3 class="sub">One prompt, end to end</h3>
@@ -2695,10 +2697,10 @@ producer()                                  consumer()
       Communication</em> (48), s7 <em>Deadlock</em> (43) — 272 slides. Adapted from Tanenbaum &amp; Bos,
       <em>Modern Operating Systems</em> 5e (ch. 1–8) and Stallings, <em>Operating Systems: Internals and Design
       Principles</em> 9e (ch. 1–13).</p>
-    <p><b>Method.</b> Iris Method: every concept sits on a ring, and each ring exists to remove a specific
-      bottleneck of the ring inside it. The running example is one prompt, held fixed so the layers can be
-      compared with each other. Claims marked <span class="tag src">source</span> are stated in the decks;
-      <span class="tag inf">inferred</span> are deductions I made from them, not quotations;
+    <p><b>Method.</b> Every concept sits on a ring, and each ring exists to fix one thing the ring inside it
+      could not do. The running example is a single prompt, kept the same throughout so the layers can be
+      compared with each other. Claims marked <span class="tag src">source</span> are said in the decks;
+      <span class="tag inf">inferred</span> are conclusions I drew from them, not quotations;
       <span class="tag ext">external</span> fills gaps where a slide shows a figure without its text.</p>
   </footer>
 </main>
